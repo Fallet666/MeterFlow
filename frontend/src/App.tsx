@@ -131,7 +131,14 @@ function AppShell() {
             path="/meters"
             element={
               authed ? (
-                <MetersPage selectedProperty={selectedProperty} />
+                <MetersPage
+                  selectedProperty={selectedProperty}
+                  properties={properties}
+                  onSelectProperty={(id) => {
+                    setSelectedProperty(id);
+                    localStorage.setItem("activeProperty", String(id));
+                  }}
+                />
               ) : (
                 <Navigate to="/auth" />
               )
@@ -141,7 +148,14 @@ function AppShell() {
             path="/readings"
             element={
               authed ? (
-                <ReadingsPage selectedProperty={selectedProperty} />
+                <ReadingsPage
+                  selectedProperty={selectedProperty}
+                  properties={properties}
+                  onSelectProperty={(id) => {
+                    setSelectedProperty(id);
+                    localStorage.setItem("activeProperty", String(id));
+                  }}
+                />
               ) : (
                 <Navigate to="/auth" />
               )

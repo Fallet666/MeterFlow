@@ -1,8 +1,9 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import Meter, MonthlyCharge, Payment, Property, Reading, Tariff
-from .services import process_reading
+from .services import ensure_demo_data, process_reading
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -104,3 +105,11 @@ class PaymentSerializer(serializers.ModelSerializer):
         if value.owner != request.user:
             raise serializers.ValidationError("Нельзя добавлять платежи к чужой собственности")
         return value
+
+
+class LoginSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data["user"] = UserSerializer(self.user).data
+        ensure_demo_data(self.user)
+        return data

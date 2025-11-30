@@ -18,10 +18,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from core.views import (
     AnalyticsViewSet,
+    LoginView,
     MeterViewSet,
     MonthlyChargeViewSet,
     PaymentViewSet,
@@ -43,7 +44,7 @@ router.register(r"analytics", AnalyticsViewSet, basename="analytics")
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/register/", RegistrationView.as_view(), name="register"),
-    path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/auth/login/", LoginView.as_view(), name="token_obtain_pair"),
     path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/", include(router.urls)),
 ]

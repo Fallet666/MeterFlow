@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Meter, MonthlyCharge, Payment, Property, Reading, Tariff
 from .serializers import (
+    LoginSerializer,
     MeterSerializer,
     MonthlyChargeSerializer,
     PaymentSerializer,
@@ -17,7 +18,7 @@ from .serializers import (
     TariffSerializer,
     UserSerializer,
 )
-from .services import forecast_property
+from .services import ensure_demo_data, forecast_property
 
 
 class RegistrationView(generics.CreateAPIView):
@@ -38,6 +39,11 @@ class RegistrationView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         self.object = serializer.save()
+        ensure_demo_data(self.object)
+
+
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
 
 
 class PropertyViewSet(viewsets.ModelViewSet):
