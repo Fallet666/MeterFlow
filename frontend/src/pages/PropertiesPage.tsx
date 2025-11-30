@@ -28,14 +28,27 @@ export function PropertiesPage({ properties, onUpdated, selectedProperty, onSele
   };
 
   return (
-    <div>
-      <h1>Объекты недвижимости</h1>
-      <form onSubmit={addProperty} className="card inline">
-        <input placeholder="Название" value={name} onChange={(e) => setName(e.target.value)} required />
-        <input placeholder="Адрес" value={address} onChange={(e) => setAddress(e.target.value)} required />
-        <button type="submit">Добавить</button>
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1>Объекты недвижимости</h1>
+          <p className="subtitle">Создавайте и выбирайте активный объект для работы с показаниями.</p>
+        </div>
+      </div>
+
+      <form onSubmit={addProperty} className="card">
+        <div className="inline">
+          <input placeholder="Название" value={name} onChange={(e) => setName(e.target.value)} required />
+          <input placeholder="Адрес" value={address} onChange={(e) => setAddress(e.target.value)} required />
+          <button type="submit">Добавить</button>
+        </div>
       </form>
+
       <div className="card">
+        <div className="page-header" style={{ alignItems: "center" }}>
+          <h3>Список объектов</h3>
+          <p className="subtitle">Выберите активный объект для работы.</p>
+        </div>
         <table>
           <thead>
             <tr>

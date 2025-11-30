@@ -34,31 +34,44 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
   }, [selectedProperty]);
 
   return (
-    <div>
-      <h1>Дашборд</h1>
-      <div className="card inline">
+    <div className="page">
+      <div className="page-header">
         <div>
-          <strong>Объект:</strong>
-          <select
-            value={selectedProperty || ""}
-            onChange={(e) => onSelectProperty(Number(e.target.value))}
-          >
-            <option value="" disabled>
-              Выберите объект
-            </option>
-            {properties.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <strong>Прогноз на текущий месяц:</strong> {forecast.toFixed(2)} ₽
+          <h1>Дашборд</h1>
+          <p className="subtitle">Быстрый обзор начислений и последних показаний.</p>
         </div>
       </div>
+
       <div className="card">
-        <h3>Последние показания</h3>
+        <div className="section-grid">
+          <div>
+            <p className="subtitle">Объект</p>
+            <select
+              value={selectedProperty || ""}
+              onChange={(e) => onSelectProperty(Number(e.target.value))}
+            >
+              <option value="" disabled>
+                Выберите объект
+              </option>
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <p className="subtitle">Прогноз на текущий месяц</p>
+            <h3 style={{ margin: 0, fontSize: "26px" }}>{forecast.toFixed(2)} ₽</h3>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="page-header" style={{ alignItems: "center" }}>
+          <h3>Последние показания</h3>
+          <p className="subtitle">Пять последних записей по выбранному объекту.</p>
+        </div>
         <table>
           <thead>
             <tr>

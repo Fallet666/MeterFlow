@@ -34,21 +34,34 @@ export function ReadingsPage({ selectedProperty }: Props) {
   if (!selectedProperty) return <div>Сначала выберите объект.</div>;
 
   return (
-    <div>
-      <h1>Показания</h1>
-      <form onSubmit={addReading} className="card inline">
-        <select value={selectedMeter || ""} onChange={(e) => setSelectedMeter(Number(e.target.value))}>
-          {meters.map((m) => (
-            <option value={m.id} key={m.id}>
-              {m.serial_number || m.id} ({m.resource_type})
-            </option>
-          ))}
-        </select>
-        <input type="date" value={readingDate} onChange={(e) => setReadingDate(e.target.value)} required />
-        <input placeholder="Значение" value={value} onChange={(e) => setValue(e.target.value)} required />
-        <button type="submit">Сохранить</button>
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1>Показания</h1>
+          <p className="subtitle">Фиксируйте новые показания счётчиков без лишних переходов.</p>
+        </div>
+      </div>
+
+      <form onSubmit={addReading} className="card">
+        <div className="inline">
+          <select value={selectedMeter || ""} onChange={(e) => setSelectedMeter(Number(e.target.value))}>
+            {meters.map((m) => (
+              <option value={m.id} key={m.id}>
+                {m.serial_number || m.id} ({m.resource_type})
+              </option>
+            ))}
+          </select>
+          <input type="date" value={readingDate} onChange={(e) => setReadingDate(e.target.value)} required />
+          <input placeholder="Значение" value={value} onChange={(e) => setValue(e.target.value)} required />
+          <button type="submit">Сохранить</button>
+        </div>
       </form>
+
       <div className="card">
+        <div className="page-header" style={{ alignItems: "center" }}>
+          <h3>Журнал показаний</h3>
+          <p className="subtitle">История ввода по выбранному объекту.</p>
+        </div>
         <table>
           <thead>
             <tr>
