@@ -61,9 +61,11 @@ class TariffSerializer(serializers.ModelSerializer):
 
 
 class ReadingSerializer(serializers.ModelSerializer):
+    meter_detail = MeterSerializer(source="meter", read_only=True)
+
     class Meta:
         model = Reading
-        fields = ["id", "meter", "value", "reading_date", "created_at"]
+        fields = ["id", "meter", "value", "reading_date", "created_at", "meter_detail"]
         read_only_fields = ["id", "created_at"]
 
     def validate_meter(self, value):

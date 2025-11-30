@@ -58,7 +58,11 @@ class MeterViewSet(viewsets.ModelViewSet):
     serializer_class = MeterSerializer
 
     def get_queryset(self):
-        return Meter.objects.filter(property__owner=self.request.user)
+        qs = Meter.objects.filter(property__owner=self.request.user)
+        property_id = self.request.query_params.get("property")
+        if property_id:
+            qs = qs.filter(property_id=property_id)
+        return qs
 
 
 class TariffViewSet(viewsets.ModelViewSet):
@@ -70,7 +74,14 @@ class ReadingViewSet(viewsets.ModelViewSet):
     serializer_class = ReadingSerializer
 
     def get_queryset(self):
-        return Reading.objects.filter(meter__property__owner=self.request.user)
+        qs = Reading.objects.filter(meter__property__owner=self.request.user)
+        property_id = self.request.query_params.get("meter__property")
+        meter_id = self.request.query_params.get("meter")
+        if property_id:
+            qs = qs.filter(meter__property_id=property_id)
+        if meter_id:
+            qs = qs.filter(meter_id=meter_id)
+        return qs
 
 
 class MonthlyChargeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -100,54 +111,104 @@ class PaymentViewSet(viewsets.ModelViewSet):
 class AnalyticsViewSet(viewsets.ViewSet):
     def list(self, request):
         property_id = request.query_params.get("property")
-        if not property_id:
-            return Response({"detail": "property param required"}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            prop = Property.objects.get(id=property_id, owner=request.user)
-        except Property.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
+        properties_param = request.query_params.get("properties")
+        resource_type = request.query_params.get("resource_type")
         start_year = int(request.query_params.get("start_year", date.today().year - 1))
         start_month = int(request.query_params.get("start_month", 1))
         end_year = int(request.query_params.get("end_year", date.today().year))
         end_month = int(request.query_params.get("end_month", 12))
 
+        props_qs = Property.objects.filter(owner=request.user)
+        selected_ids = []
+        if properties_param:
+            selected_ids = [int(p) for p in properties_param.split(",") if p]
+        elif property_id:
+            selected_ids = [int(property_id)]
+
+        if selected_ids:
+            props_qs = props_qs.filter(id__in=selected_ids)
+        props = list(props_qs)
+        if not props:
+            return Response({"detail": "Нет доступных объектов для аналитики"}, status=status.HTTP_400_BAD_REQUEST)
+
         charges = (
-            MonthlyCharge.objects.filter(property=prop)
-            .filter(
-                (Q(year__gt=start_year) | Q(year=start_year, month__gte=start_month))
-            )
+            MonthlyCharge.objects.filter(property__in=props)
+            .filter((Q(year__gt=start_year) | Q(year=start_year, month__gte=start_month)))
             .filter(Q(year__lt=end_year) | Q(year=end_year, month__lte=end_month))
         )
 
-        data = {}
+        if resource_type:
+            charges = charges.filter(resource_type=resource_type)
+
+        monthly_map = {}
         for charge in charges.order_by("year", "month"):
             key = f"{charge.year}-{charge.month:02d}"
-            data.setdefault(key, {"month": key, "items": [], "total_amount": 0, "total_consumption": 0})
-            data[key]["items"].append(
+            monthly_map.setdefault(
+                key,
                 {
+                    "month": key,
+                    "items": [],
+                    "total_amount": 0,
+                    "total_consumption": 0,
+                    "cumulative_amount": 0,
+                },
+            )
+            monthly_map[key]["items"].append(
+                {
+                    "property": charge.property_id,
                     "resource_type": charge.resource_type,
                     "consumption": float(charge.consumption),
                     "amount": float(charge.amount),
                 }
             )
-            data[key]["total_amount"] += float(charge.amount)
-            data[key]["total_consumption"] += float(charge.consumption)
+            monthly_map[key]["total_amount"] += float(charge.amount)
+            monthly_map[key]["total_consumption"] += float(charge.consumption)
 
-        payment_summary = (
-            Payment.objects.filter(property=prop)
+        monthly = list(sorted(monthly_map.values(), key=lambda item: item["month"]))
+        running = 0
+        for m in monthly:
+            running += m["total_amount"]
+            m["cumulative_amount"] = running
+
+        by_property = (
+            charges.values("property__id", "property__name")
+            .annotate(total_amount=Sum("amount"), total_consumption=Sum("consumption"))
+            .order_by("property__id")
+        )
+
+        totals_amount = sum(item["total_amount"] for item in by_property)
+        totals_consumption = sum(item["total_consumption"] for item in by_property)
+        peak_month = max(monthly, key=lambda m: m["total_consumption"], default=None)
+
+        days_count = len(monthly) * 30 or 1
+        average_daily = totals_consumption / days_count
+
+        forecast_value = float(sum(forecast_property(p) for p in props) / len(props))
+
+        payments = (
+            Payment.objects.filter(property__in=props)
             .values("year", "month")
             .annotate(total=Sum("amount"))
         )
 
-        forecast = float(forecast_property(prop))
-
         return Response(
             {
-                "period": {"start_year": start_year, "start_month": start_month, "end_year": end_year, "end_month": end_month},
-                "monthly": list(data.values()),
-                "payments": list(payment_summary),
-                "forecast_amount": forecast,
+                "period": {
+                    "start_year": start_year,
+                    "start_month": start_month,
+                    "end_year": end_year,
+                    "end_month": end_month,
+                },
+                "monthly": monthly,
+                "summary": {
+                    "total_amount": float(totals_amount),
+                    "total_consumption": float(totals_consumption),
+                    "average_daily": float(average_daily),
+                    "peak_month": peak_month["month"] if peak_month else None,
+                },
+                "comparison": list(by_property),
+                "payments": list(payments),
+                "forecast_amount": forecast_value,
             }
         )
 

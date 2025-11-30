@@ -12,9 +12,15 @@ interface ForecastResponse {
   forecast_amount: number;
 }
 
+interface AnalyticsResponse {
+  monthly: { month: string; total_amount: number }[];
+  summary: { total_amount: number };
+}
+
 export function Dashboard({ selectedProperty, properties, onSelectProperty }: Props) {
   const [forecast, setForecast] = useState<number>(0);
   const [readings, setReadings] = useState<any[]>([]);
+  const [charges, setCharges] = useState<AnalyticsResponse | null>(null);
 
   useEffect(() => {
     if (!selectedProperty && properties.length > 0) {
@@ -30,6 +36,17 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
       api
         .get("readings/", { params: { meter__property: selectedProperty } })
         .then(({ data }) => setReadings(data.slice(0, 5)));
+      api
+        .get<AnalyticsResponse>("analytics/", {
+          params: {
+            property: selectedProperty,
+            start_year: new Date().getFullYear(),
+            start_month: new Date().getMonth() + 1,
+            end_year: new Date().getFullYear(),
+            end_month: new Date().getMonth() + 1,
+          },
+        })
+        .then(({ data }) => setCharges(data));
     }
   }, [selectedProperty]);
 
@@ -46,10 +63,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
         <div className="section-grid">
           <div>
             <p className="subtitle">Объект</p>
-            <select
-              value={selectedProperty || ""}
-              onChange={(e) => onSelectProperty(Number(e.target.value))}
-            >
+            <select value={selectedProperty || ""} onChange={(e) => onSelectProperty(Number(e.target.value))}>
               <option value="" disabled>
                 Выберите объект
               </option>
@@ -66,6 +80,31 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
           </div>
         </div>
       </div>
+
+      {charges && (
+        <div className="section-grid">
+          <div className="card">
+            <p className="subtitle">Фактические начисления</p>
+            <h3 style={{ fontSize: 26 }}>{charges.summary.total_amount.toFixed(2)} ₽</h3>
+            <p className="subtitle">Текущий период</p>
+          </div>
+          <div className="card">
+            <p className="subtitle">Оценка до конца месяца</p>
+            <h3 style={{ fontSize: 26 }}>{forecast.toFixed(2)} ₽</h3>
+            <p className="subtitle">На основе прошлых месяцев</p>
+          </div>
+          <div className="card">
+            <p className="subtitle">Разница с прошлым</p>
+            <h3 style={{ fontSize: 26 }}>
+              {(
+                (charges.monthly[charges.monthly.length - 1]?.total_amount || 0) -
+                (charges.monthly[charges.monthly.length - 2]?.total_amount || 0)
+              ).toFixed(2)} ₽
+            </h3>
+            <p className="subtitle">Последние два месяца</p>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div className="page-header" style={{ alignItems: "center" }}>
