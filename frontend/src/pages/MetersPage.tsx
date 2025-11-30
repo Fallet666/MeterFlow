@@ -21,6 +21,8 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
   const [resourceType, setResourceType] = useState("electricity");
   const [unit, setUnit] = useState("kwh");
   const [serial, setSerial] = useState("");
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedProperty) {
@@ -32,15 +34,38 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
 
   const addMeter = async (e: FormEvent) => {
     e.preventDefault();
+    setFeedback(null);
+    setError(null);
     if (!selectedProperty) return;
-    const { data } = await api.post("meters/", {
-      property: selectedProperty,
-      resource_type: resourceType,
-      unit,
-      serial_number: serial,
-    });
-    setMeters([...meters, data]);
-    setSerial("");
+    if (!serial.trim()) {
+      setError("Введите серийный номер");
+      return;
+    }
+    try {
+      const { data } = await api.post("meters/", {
+        property: selectedProperty,
+        resource_type: resourceType,
+        unit,
+        serial_number: serial,
+      });
+      setMeters([...meters, data]);
+      setSerial("");
+      setFeedback("Счётчик добавлен");
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Не удалось добавить счётчик");
+    }
+  };
+
+  const removeMeter = async (id: number) => {
+    await api.delete(`meters/${id}/`);
+    setMeters(meters.filter((m) => m.id !== id));
+    setFeedback("Счётчик удалён");
+  };
+
+  const updateMeter = async (meter: Meter, patch: Partial<Meter>) => {
+    const { data } = await api.patch(`meters/${meter.id}/`, patch);
+    setMeters(meters.map((m) => (m.id === meter.id ? data : m)));
+    setFeedback("Сохранено");
   };
 
   return (
@@ -95,6 +120,10 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
             <input placeholder="Серийный номер" value={serial} onChange={(e) => setSerial(e.target.value)} />
             <button type="submit">Добавить</button>
           </div>
+          <div className="inline" style={{ justifyContent: "space-between" }}>
+            {error && <p className="error">{error}</p>}
+            {feedback && <p className="success">{feedback}</p>}
+          </div>
         </form>
       )}
 
@@ -111,6 +140,7 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
                   <th>Тип ресурса</th>
                   <th>Ед. изм.</th>
                   <th>Серийный номер</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -119,6 +149,18 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
                     <td>{RESOURCE_LABELS[m.resource_type] || m.resource_type}</td>
                     <td>{m.unit}</td>
                     <td>{m.serial_number}</td>
+                    <td className="inline" style={{ gap: "8px" }}>
+                      <button
+                        type="button"
+                        className="link"
+                        onClick={() => updateMeter(m, { is_active: !m.is_active })}
+                      >
+                        {m.is_active ? "Деактивировать" : "Активировать"}
+                      </button>
+                      <button type="button" className="link" onClick={() => removeMeter(m.id)}>
+                        Удалить
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
