@@ -70,7 +70,7 @@ function AppShell() {
       <header className="topbar">
         <div className="logo">MeterFlow</div>
         {authed && (
-          <nav>
+          <nav className="nav-links">
             <Link to="/">Дашборд</Link>
             <Link to="/properties">Объекты</Link>
             <Link to="/meters">Счётчики</Link>
@@ -86,12 +86,13 @@ function AppShell() {
         )}
       </header>
       <main className="content">
-        <Routes>
-          <Route
-            path="/auth"
-            element={<AuthPage onAuthenticated={handleAuth} onRegister={authApi.register} onLogin={authApi.login} />}
-          />
-          <Route
+        <div className="page-wrapper">
+          <Routes>
+            <Route
+              path="/auth"
+              element={<AuthPage onAuthenticated={handleAuth} onRegister={authApi.register} onLogin={authApi.login} />}
+            />
+            <Route
             path="/"
             element={
               authed ? (
@@ -156,7 +157,8 @@ function AppShell() {
               )
             }
           />
-        </Routes>
+          </Routes>
+        </div>
       </main>
     </div>
   );

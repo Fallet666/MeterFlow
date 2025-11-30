@@ -42,21 +42,34 @@ export function MetersPage({ selectedProperty }: Props) {
   if (!selectedProperty) return <div>Сначала выберите объект недвижимости.</div>;
 
   return (
-    <div>
-      <h1>Счётчики</h1>
-      <form onSubmit={addMeter} className="card inline">
-        <select value={resourceType} onChange={(e) => setResourceType(e.target.value)}>
-          {Object.entries(RESOURCE_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <input placeholder="Единицы" value={unit} onChange={(e) => setUnit(e.target.value)} />
-        <input placeholder="Серийный номер" value={serial} onChange={(e) => setSerial(e.target.value)} />
-        <button type="submit">Добавить</button>
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1>Счётчики</h1>
+          <p className="subtitle">Добавьте приборы учета для выбранного объекта.</p>
+        </div>
+      </div>
+
+      <form onSubmit={addMeter} className="card">
+        <div className="inline">
+          <select value={resourceType} onChange={(e) => setResourceType(e.target.value)}>
+            {Object.entries(RESOURCE_LABELS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <input placeholder="Единицы" value={unit} onChange={(e) => setUnit(e.target.value)} />
+          <input placeholder="Серийный номер" value={serial} onChange={(e) => setSerial(e.target.value)} />
+          <button type="submit">Добавить</button>
+        </div>
       </form>
+
       <div className="card">
+        <div className="page-header" style={{ alignItems: "center" }}>
+          <h3>Список счётчиков</h3>
+          <p className="subtitle">Все приборы учета на выбранном объекте.</p>
+        </div>
         <table>
           <thead>
             <tr>
