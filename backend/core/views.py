@@ -1,5 +1,7 @@
 from datetime import date
 
+from datetime import date
+
 from django.contrib.auth.models import User
 from django.db.models import Q, Sum
 from rest_framework import generics, permissions, status, viewsets
@@ -141,6 +143,9 @@ class AnalyticsViewSet(viewsets.ViewSet):
             charges = charges.filter(resource_type=resource_type)
 
         monthly_map = {}
+        resource_totals = {}
+        monthly_by_resource = {}
+
         for charge in charges.order_by("year", "month"):
             key = f"{charge.year}-{charge.month:02d}"
             monthly_map.setdefault(
@@ -164,6 +169,24 @@ class AnalyticsViewSet(viewsets.ViewSet):
             monthly_map[key]["total_amount"] += float(charge.amount)
             monthly_map[key]["total_consumption"] += float(charge.consumption)
 
+            resource_totals.setdefault(
+                charge.resource_type,
+                {"total_consumption": 0.0, "total_amount": 0.0},
+            )
+            resource_totals[charge.resource_type]["total_consumption"] += float(charge.consumption)
+            resource_totals[charge.resource_type]["total_amount"] += float(charge.amount)
+
+            monthly_by_resource.setdefault(key, {})
+            monthly_by_resource[key].setdefault(
+                charge.resource_type, {"consumption": 0.0, "amount": 0.0}
+            )
+            monthly_by_resource[key][charge.resource_type]["consumption"] += float(
+                charge.consumption
+            )
+            monthly_by_resource[key][charge.resource_type]["amount"] += float(
+                charge.amount
+            )
+
         monthly = list(sorted(monthly_map.values(), key=lambda item: item["month"]))
         running = 0
         for m in monthly:
@@ -178,10 +201,10 @@ class AnalyticsViewSet(viewsets.ViewSet):
 
         totals_amount = sum(item["total_amount"] for item in by_property)
         totals_consumption = sum(item["total_consumption"] for item in by_property)
-        peak_month = max(monthly, key=lambda m: m["total_consumption"], default=None)
+        peak_month_by_amount = max(monthly, key=lambda m: m["total_amount"], default=None)
 
         days_count = len(monthly) * 30 or 1
-        average_daily = totals_consumption / days_count
+        average_daily_amount = totals_amount / days_count
 
         forecast_value = float(sum(forecast_property(p) for p in props) / len(props))
 
@@ -190,6 +213,13 @@ class AnalyticsViewSet(viewsets.ViewSet):
             .values("year", "month")
             .annotate(total=Sum("amount"))
         )
+
+        units_map = {
+            item["resource_type"]: item["unit"]
+            for item in Meter.objects.filter(property__in=props)
+            .values("resource_type", "unit")
+            .distinct()
+        }
 
         return Response(
             {
@@ -200,11 +230,30 @@ class AnalyticsViewSet(viewsets.ViewSet):
                     "end_month": end_month,
                 },
                 "monthly": monthly,
+                "monthly_by_resource": [
+                    {
+                        "month": month,
+                        "resource_type": resource,
+                        "consumption": values["consumption"],
+                        "amount": values["amount"],
+                    }
+                    for month, data in sorted(monthly_by_resource.items())
+                    for resource, values in data.items()
+                ],
                 "summary": {
                     "total_amount": float(totals_amount),
                     "total_consumption": float(totals_consumption),
-                    "average_daily": float(average_daily),
-                    "peak_month": peak_month["month"] if peak_month else None,
+                    "average_daily_amount": float(average_daily_amount),
+                    "peak_month": peak_month_by_amount["month"] if peak_month_by_amount else None,
+                    "resources": [
+                        {
+                            "resource_type": resource,
+                            "total_consumption": values["total_consumption"],
+                            "total_amount": values["total_amount"],
+                            "unit": units_map.get(resource, ""),
+                        }
+                        for resource, values in resource_totals.items()
+                    ],
                 },
                 "comparison": list(by_property),
                 "payments": list(payments),

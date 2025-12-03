@@ -237,6 +237,7 @@ table td {
   padding: 12px 10px;
   border-bottom: 1px solid #1f2937;
   text-align: left;
+  vertical-align: middle;
 }
 
 table thead th {
@@ -258,10 +259,89 @@ tr.active {
   background: rgba(37, 99, 235, 0.12);
 }
 
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+  min-width: 190px;
+}
+
+.table-actions .link {
+  padding: 6px 0;
+}
+
 .section-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 14px;
+}
+
+.property-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.property-chip {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+.property-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.resource-card {
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #0d1628;
+}
+
+.favorite-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.favorite-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  background: #0e182c;
+}
+
+.favorite-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.favorite-chart {
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #0e182c;
+}
+
+.favorite-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
 @media (max-width: 1100px) {
