@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import Meter, MonthlyCharge, Payment, Property, Reading, Tariff
-from .services import ensure_demo_data, process_reading
+from .services import ensure_demo_data, find_tariff, get_previous_reading, process_reading
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -62,11 +62,26 @@ class TariffSerializer(serializers.ModelSerializer):
 
 class ReadingSerializer(serializers.ModelSerializer):
     meter_detail = MeterSerializer(source="meter", read_only=True)
+    resource_label = serializers.SerializerMethodField()
+    unit = serializers.SerializerMethodField()
+    consumption_delta = serializers.SerializerMethodField()
+    amount_value = serializers.SerializerMethodField()
 
     class Meta:
         model = Reading
-        fields = ["id", "meter", "value", "reading_date", "created_at", "meter_detail"]
-        read_only_fields = ["id", "created_at"]
+        fields = [
+            "id",
+            "meter",
+            "value",
+            "reading_date",
+            "created_at",
+            "meter_detail",
+            "resource_label",
+            "unit",
+            "consumption_delta",
+            "amount_value",
+        ]
+        read_only_fields = ["id", "created_at", "consumption_delta", "amount_value", "resource_label", "unit"]
 
     def validate_meter(self, value):
         request = self.context["request"]
@@ -78,6 +93,30 @@ class ReadingSerializer(serializers.ModelSerializer):
         reading = super().create(validated_data)
         process_reading(reading)
         return reading
+
+    def get_unit(self, obj):
+        return obj.meter.unit
+
+    def get_resource_label(self, obj):
+        return obj.meter.get_resource_type_display()
+
+    def get_consumption_delta(self, obj):
+        previous = get_previous_reading(obj.meter, obj.reading_date)
+        if not previous:
+            return None
+        delta = obj.value - previous.value
+        if delta <= 0:
+            return None
+        return float(delta)
+
+    def get_amount_value(self, obj):
+        delta = self.get_consumption_delta(obj)
+        if delta is None:
+            return None
+        tariff = find_tariff(obj.meter.resource_type, obj.reading_date)
+        if not tariff:
+            return None
+        return float(tariff.value_per_unit * delta)
 
 
 class MonthlyChargeSerializer(serializers.ModelSerializer):
