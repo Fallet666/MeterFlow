@@ -149,7 +149,7 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
                     <td>{RESOURCE_LABELS[m.resource_type] || m.resource_type}</td>
                     <td>{m.unit}</td>
                     <td>{m.serial_number}</td>
-                    <td className="table-actions">
+                    <td className="inline" style={{ gap: "8px" }}>
                       <button
                         type="button"
                         className="link"

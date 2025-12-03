@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import api from "../api";
 import { Meter, Property } from "../App";
 
@@ -32,6 +32,10 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
         if (data.length > 0) setSelectedMeter(data[0].id);
         else setSelectedMeter(null);
       });
+      api
+        .get("readings/", { params: { meter__property: selectedProperty } })
+        .then(({ data }) => setItems(data))
+        .catch(() => setError("Не удалось загрузить показания"));
     } else {
       setMeters([]);
       setItems([]);
@@ -40,20 +44,12 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
   }, [selectedProperty]);
 
   useEffect(() => {
-    if (!selectedProperty) return;
-    const params: any = { meter__property: selectedProperty };
-    if (selectedMeter) params.meter = selectedMeter;
-    api
-      .get("readings/", { params })
-      .then(({ data }) => setItems(data))
-      .catch(() => setError("Не удалось загрузить показания"));
-  }, [selectedProperty, selectedMeter]);
-
-  useEffect(() => {
     if (!readingDate) {
       setReadingDate(new Date().toISOString().slice(0, 10));
     }
   }, [readingDate]);
+
+  const selectedMeterInfo = useMemo(() => meters.find((m) => m.id === selectedMeter), [meters, selectedMeter]);
 
   const addReading = async (e: FormEvent) => {
     e.preventDefault();
@@ -171,15 +167,19 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
               {error && <p className="error">{error}</p>}
             </div>
           </div>
+          {selectedMeterInfo && (
+            <div className="pill">
+              {RESOURCE_LABELS[selectedMeterInfo.resource_type] || selectedMeterInfo.resource_type} · {selectedMeterInfo.serial_number || "без номера"} ·
+              {selectedMeterInfo.unit}
+            </div>
+          )}
         </form>
       )}
 
       <div className="card">
         <div className="page-header" style={{ alignItems: "center" }}>
           <h3>Журнал показаний</h3>
-          <p className="subtitle">
-            История ввода по выбранному объекту{selectedMeter ? " и счётчику" : ""}.
-          </p>
+          <p className="subtitle">История ввода по выбранному объекту.</p>
         </div>
         {selectedProperty ? (
           items.length ? (
@@ -188,31 +188,24 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
                 <tr>
                   <th>Счётчик</th>
                   <th>Значение</th>
-                  <th>Начисление</th>
                   <th>Дата</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((r) => {
-                  const unit = r.unit || r.meter_detail?.unit;
-                  return (
-                    <tr key={r.id}>
-                      <td>
-                        {RESOURCE_LABELS[r.meter_detail?.resource_type || ""] || r.meter_detail?.resource_type || "Счётчик"}
-                        <div className="subtitle">{r.meter_detail?.serial_number || r.meter}</div>
-                      </td>
-                      <td>{`${r.value} ${unit || ""}`.trim()}</td>
-                      <td>{r.amount_value ? `${Number(r.amount_value).toFixed(2)} ₽` : "—"}</td>
-                      <td>{r.reading_date}</td>
-                    </tr>
-                  );
-                })}
+                {items.map((r) => (
+                  <tr key={r.id}>
+                    <td>
+                      {RESOURCE_LABELS[r.meter_detail?.resource_type || ""] || r.meter_detail?.resource_type || "Счётчик"}
+                      <div className="subtitle">{r.meter_detail?.serial_number || r.meter}</div>
+                    </td>
+                    <td>{r.value}</td>
+                    <td>{r.reading_date}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           ) : (
-            <p className="subtitle">
-              Нет показаний для выбранного {selectedMeter ? "счётчика" : "объекта"}.
-            </p>
+            <p className="subtitle">Нет показаний для выбранного объекта.</p>
           )
         ) : (
           <p className="subtitle">Выберите объект, чтобы увидеть журнал показаний.</p>
