@@ -10,6 +10,6 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY . /app
 
-EXPOSE 7001
+EXPOSE 8100
 
-CMD ["sh", "-c", "python manage.py migrate && python manage.py seedtestdata && python manage.py runserver 0.0.0.0:7001"]
+CMD ["sh", "-c", "python manage.py migrate && python manage.py seedtestdata && python manage.py runserver 0.0.0.0:8100"]
