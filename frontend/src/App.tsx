@@ -229,6 +229,7 @@ function AppShell() {
                   )
                 }
               />
+              <Route path="*" element={<Navigate to={authed ? "/" : "/auth"} replace />} />
             </Routes>
           </div>
         </main>
