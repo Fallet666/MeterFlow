@@ -153,15 +153,15 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
     <div className="page">
       <div className="page-header">
         <div>
-          <h1>Дашборд</h1>
-          <p className="subtitle">Быстрый обзор начислений и последних показаний.</p>
+          <h1>EnergoBoard · Обзор</h1>
+          <p className="subtitle">Светлый рабочий стол с прогнозом, начислениями и последними показаниями.</p>
         </div>
       </div>
 
       <div className="card">
         <div className="section-grid">
           <div>
-            <p className="subtitle">Объект</p>
+            <p className="subtitle">Текущий объект</p>
             <select value={selectedProperty || ""} onChange={(e) => onSelectProperty(Number(e.target.value))}>
               <option value="" disabled>
                 Выберите объект
@@ -172,31 +172,31 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
                 </option>
               ))}
             </select>
+            <p className="subtitle" style={{ marginTop: 8 }}>Переключайтесь между объектами, чтобы увидеть прогнозы и историю.</p>
           </div>
-          <div>
-            <p className="subtitle">Прогноз на текущий месяц</p>
-            <h3 style={{ margin: 0, fontSize: "26px" }}>{forecast.toFixed(2)} ₽</h3>
+          <div className="info-tile highlight-panel">
+            <p className="subtitle">Прогноз на месяц</p>
+            <div className="stat-value">{forecast.toFixed(2)} ₽</div>
+            <span className="badge">Обновляется автоматически</span>
           </div>
         </div>
       </div>
 
       {charges && (
-        <div className="section-grid">
-          <div className="card">
+        <div className="hero-grid">
+          <div className="info-tile">
             <p className="subtitle">Фактические начисления</p>
-            <h3 style={{ fontSize: 26 }}>{currentMonthAmount.toFixed(2)} ₽</h3>
-            <p className="subtitle">Сумма за {currentMonthKey}</p>
+            <div className="stat-value">{currentMonthAmount.toFixed(2)} ₽</div>
+            <p className="subtitle">За {currentMonthKey}</p>
           </div>
-          <div className="card">
+          <div className="info-tile">
             <p className="subtitle">Оценка до конца месяца</p>
-            <h3 style={{ fontSize: 26 }}>{forecast.toFixed(2)} ₽</h3>
+            <div className="stat-value">{forecast.toFixed(2)} ₽</div>
             <p className="subtitle">На основе прошлых месяцев</p>
           </div>
-          <div className="card">
-            <p className="subtitle">Разница с прошлым</p>
-            <h3 style={{ fontSize: 26 }}>
-              {(currentMonthAmount - previousMonthAmount).toFixed(2)} ₽
-            </h3>
+          <div className="info-tile">
+            <p className="subtitle">Разница с прошлым месяцем</p>
+            <div className="stat-value">{(currentMonthAmount - previousMonthAmount).toFixed(2)} ₽</div>
             <p className="subtitle">Сравнение {currentMonthKey} и {previousMonthKey}</p>
           </div>
         </div>
@@ -205,8 +205,10 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
       {favoriteCharts.length > 0 && (
         <div className="card">
           <div className="page-header" style={{ alignItems: "center" }}>
-            <h3>Избранные графики</h3>
-            <p className="subtitle">Мини-виджеты из конструктора аналитики</p>
+            <div>
+              <h3>Избранные мини-графики</h3>
+              <p className="subtitle">Подборки из раздела «Аналитика», доступные прямо с дашборда.</p>
+            </div>
           </div>
           <div className="favorite-grid">
             {favoriteCharts.slice(0, 3).map((fav) => {
@@ -224,7 +226,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
                         <XAxis dataKey="month" hide />
                         <YAxis hide />
                         <Tooltip />
-                        <Line type="monotone" dataKey="total_amount" stroke="#7c9bff" dot={false} />
+                        <Line type="monotone" dataKey="total_amount" stroke="#f97316" dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   ) : (
@@ -239,8 +241,10 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
 
       <div className="card">
         <div className="page-header" style={{ alignItems: "center" }}>
-          <h3>Последние показания</h3>
-          <p className="subtitle">Пять последних записей по выбранному объекту.</p>
+          <div>
+            <h3>Последние показания</h3>
+            <p className="subtitle">Пять последних записей по выбранному объекту.</p>
+          </div>
         </div>
         <table>
           <thead>

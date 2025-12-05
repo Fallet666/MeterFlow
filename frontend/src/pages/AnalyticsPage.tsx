@@ -206,7 +206,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card highlight-panel">
         <div className="section-grid" style={{ alignItems: "flex-end" }}>
           <div>
             <p className="subtitle">Объекты</p>
@@ -297,20 +297,20 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
 
       {data && (
         <>
-          <div className="section-grid">
-            <div className="card">
+          <div className="hero-grid">
+            <div className="info-tile">
               <p className="subtitle">Начисления за период</p>
-              <h3 style={{ fontSize: 28 }}>{data.summary.total_amount.toFixed(2)} ₽</h3>
+              <div className="stat-value">{data.summary.total_amount.toFixed(2)} ₽</div>
               <p className="subtitle">Среднесуточные начисления {averageDailyAmount.toFixed(2)} ₽</p>
             </div>
-            <div className="card">
+            <div className="info-tile">
               <p className="subtitle">Сумма начислений</p>
-              <h3 style={{ fontSize: 28 }}>{data.summary.total_amount.toFixed(2)} ₽</h3>
+              <div className="stat-value">{data.summary.total_amount.toFixed(2)} ₽</div>
               <p className="subtitle">Прогноз: {data.forecast_amount.toFixed(2)} ₽</p>
             </div>
-            <div className="card">
+            <div className="info-tile">
               <p className="subtitle">Пиковый месяц</p>
-              <h3 style={{ fontSize: 24 }}>{data.summary.peak_month || "—"}</h3>
+              <div className="stat-value">{data.summary.peak_month || "—"}</div>
               <p className="subtitle">Отслеживайте всплески начислений по сумме.</p>
             </div>
           </div>
@@ -337,38 +337,40 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
             </div>
           )}
 
-          <div className="card">
-            <div className="page-header" style={{ alignItems: "center" }}>
-              <h3>Начисления по месяцам (₽)</h3>
-              <p className="subtitle">Детализация выбранного диапазона</p>
+          <div className="grid-2col">
+            <div className="card">
+              <div className="page-header" style={{ alignItems: "center" }}>
+                <h3>Начисления по месяцам (₽)</h3>
+                <p className="subtitle">Детализация выбранного диапазона</p>
+              </div>
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={data.monthly}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="total_amount" name="Сумма" fill="#f97316" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={data.monthly}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="total_amount" name="Сумма" fill="#7c9bff" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
 
-          <div className="card">
-            <div className="page-header" style={{ alignItems: "center" }}>
-              <h3>Накопительный итог (₽)</h3>
-              <p className="subtitle">Суммарные начисления с начала периода</p>
+            <div className="card">
+              <div className="page-header" style={{ alignItems: "center" }}>
+                <h3>Накопительный итог (₽)</h3>
+                <p className="subtitle">Суммарные начисления с начала периода</p>
+              </div>
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={data.monthly}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="cumulative_amount" name="Кумулятивно ₽" stroke="#fb923c" />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart data={data.monthly}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="cumulative_amount" name="Кумулятивно ₽" stroke="#60a5fa" />
-              </LineChart>
-            </ResponsiveContainer>
           </div>
 
           {Object.entries(monthlyByResource).map(([resource, points]) => (
@@ -401,31 +403,31 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
                   const chartData = favoriteData[fav.id];
                   return (
                     <div key={fav.id} className="favorite-chart">
-                      <div className="favorite-chart-header">
-                        <div>
-                          <strong>{fav.name}</strong>
-                          <p className="subtitle">
-                            {RANGE_PRESETS[fav.rangePreset].label} · {RESOURCE_LABELS[fav.resourceType] || (fav.resourceType ? fav.resourceType : "все ресурсы")}
-                          </p>
-                        </div>
-                        <button className="link" type="button" onClick={() => removeFavorite(fav.id)}>
-                          Удалить
-                        </button>
-                      </div>
-                      {chartData ? (
-                        <ResponsiveContainer width="100%" height={180}>
-                          <LineChart data={chartData.monthly}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Line type="monotone" dataKey="total_amount" name="Начисления" stroke="#7c9bff" />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <p className="subtitle">Загрузка...</p>
-                      )}
+              <div className="favorite-chart-header">
+                <div>
+                  <strong>{fav.name}</strong>
+                  <p className="subtitle">
+                    {RANGE_PRESETS[fav.rangePreset].label} · {RESOURCE_LABELS[fav.resourceType] || (fav.resourceType ? fav.resourceType : "все ресурсы")}
+                  </p>
+                </div>
+                <button className="link" type="button" onClick={() => removeFavorite(fav.id)}>
+                  Удалить
+                </button>
+              </div>
+              {chartData ? (
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={chartData.monthly}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="total_amount" name="Начисления" stroke="#f97316" />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="subtitle">Загрузка...</p>
+              )}
                     </div>
                   );
                 })}

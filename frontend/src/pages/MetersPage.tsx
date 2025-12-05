@@ -81,10 +81,7 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
         <div className="section-grid">
           <div>
             <p className="subtitle">Объект</p>
-            <select
-              value={selectedProperty || ""}
-              onChange={(e) => onSelectProperty(Number(e.target.value))}
-            >
+            <select value={selectedProperty || ""} onChange={(e) => onSelectProperty(Number(e.target.value))}>
               <option value="" disabled>
                 Выберите объект
               </option>
@@ -95,20 +92,20 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
               ))}
             </select>
           </div>
-          <div>
+          <div className="highlight-panel info-tile">
             <p className="subtitle">Совет</p>
             <p>Выберите объект и добавьте счетчики, чтобы фиксировать показания и начисления.</p>
           </div>
         </div>
       </div>
 
-      {!selectedProperty && (
-        <div className="card">Сначала выберите или создайте объект недвижимости.</div>
-      )}
+      {!selectedProperty && <div className="card">Сначала выберите или создайте объект недвижимости.</div>}
 
       {selectedProperty && (
         <form onSubmit={addMeter} className="card">
-          <div className="inline">
+          <h3 style={{ marginBottom: 10 }}>Добавить счётчик</h3>
+          <div className="form-grid">
+            <label>Тип ресурса</label>
             <select value={resourceType} onChange={(e) => setResourceType(e.target.value)}>
               {Object.entries(RESOURCE_LABELS).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -116,11 +113,14 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
                 </option>
               ))}
             </select>
-            <input placeholder="Единицы" value={unit} onChange={(e) => setUnit(e.target.value)} />
-            <input placeholder="Серийный номер" value={serial} onChange={(e) => setSerial(e.target.value)} />
+            <label>Единицы</label>
+            <input placeholder="кВт·ч, м³..." value={unit} onChange={(e) => setUnit(e.target.value)} />
+            <label>Серийный номер</label>
+            <input placeholder="Укажите серийный номер" value={serial} onChange={(e) => setSerial(e.target.value)} />
+            <div></div>
             <button type="submit">Добавить</button>
           </div>
-          <div className="inline" style={{ justifyContent: "space-between" }}>
+          <div className="inline" style={{ justifyContent: "space-between", marginTop: 8 }}>
             {error && <p className="error">{error}</p>}
             {feedback && <p className="success">{feedback}</p>}
           </div>
@@ -129,8 +129,10 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
 
       <div className="card">
         <div className="page-header" style={{ alignItems: "center" }}>
-          <h3>Список счётчиков</h3>
-          <p className="subtitle">Все приборы учета на выбранном объекте.</p>
+          <div>
+            <h3>Список счётчиков</h3>
+            <p className="subtitle">Все приборы учета на выбранном объекте.</p>
+          </div>
         </div>
         {selectedProperty ? (
           meters.length ? (

@@ -97,10 +97,7 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
         <div className="section-grid">
           <div>
             <p className="subtitle">Объект</p>
-            <select
-              value={selectedProperty || ""}
-              onChange={(e) => onSelectProperty(Number(e.target.value))}
-            >
+            <select value={selectedProperty || ""} onChange={(e) => onSelectProperty(Number(e.target.value))}>
               <option value="" disabled>
                 Выберите объект
               </option>
@@ -111,9 +108,9 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
               ))}
             </select>
           </div>
-          <div>
+          <div className="info-tile highlight-panel">
             <p className="subtitle">Совет</p>
-            <p>Выберите объект, чтобы загрузить счетчики и внести новые показания.</p>
+            <p>Выберите объект и счётчик, затем внесите значение и дату показания.</p>
           </div>
         </div>
       </div>
@@ -122,46 +119,38 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
 
       {selectedProperty && (
         <form onSubmit={addReading} className="card reading-form">
-          <div className="section-grid">
-            <label>
-              Счётчик
-              <select
-                value={selectedMeter || ""}
-                onChange={(e) => setSelectedMeter(Number(e.target.value))}
-                required
-              >
-                <option value="" disabled>
-                  Выберите счётчик
+          <h3 style={{ marginBottom: 10 }}>Новое показание</h3>
+          <div className="form-grid">
+            <label>Счётчик</label>
+            <select value={selectedMeter || ""} onChange={(e) => setSelectedMeter(Number(e.target.value))} required>
+              <option value="" disabled>
+                Выберите счётчик
+              </option>
+              {meters.map((m) => (
+                <option value={m.id} key={m.id}>
+                  {RESOURCE_LABELS[m.resource_type] || m.resource_type} · {m.serial_number || m.id}
                 </option>
-                {meters.map((m) => (
-                  <option value={m.id} key={m.id}>
-                    {RESOURCE_LABELS[m.resource_type] || m.resource_type} · {m.serial_number || m.id}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Дата показания
-              <input
-                type="date"
-                max={new Date().toISOString().slice(0, 10)}
-                value={readingDate}
-                onChange={(e) => setReadingDate(e.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Значение
-              <input
-                type="number"
-                min="0"
-                step="0.001"
-                placeholder="Например, 1245.600"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                required
-              />
-            </label>
+              ))}
+            </select>
+            <label>Дата показания</label>
+            <input
+              type="date"
+              max={new Date().toISOString().slice(0, 10)}
+              value={readingDate}
+              onChange={(e) => setReadingDate(e.target.value)}
+              required
+            />
+            <label>Значение</label>
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              placeholder="Например, 1245.600"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              required
+            />
+            <div></div>
             <div className="actions">
               <button type="submit" disabled={!meters.length}>
                 Сохранить
@@ -171,6 +160,11 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
               {error && <p className="error">{error}</p>}
             </div>
           </div>
+          {selectedMeter && (
+            <p className="subtitle" style={{ marginTop: 8 }}>
+              Выбранный счётчик: {meters.find((m) => m.id === selectedMeter)?.serial_number || selectedMeter}
+            </p>
+          )}
         </form>
       )}
 
