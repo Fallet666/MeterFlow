@@ -65,10 +65,15 @@ const RESOURCE_LABELS: Record<string, string> = {
 };
 
 const RANGE_PRESETS = {
-  year: { label: "Год", months: 12 },
+  quarter: { label: "3 месяца", months: 3 },
   half: { label: "6 месяцев", months: 6 },
+  year: { label: "Год", months: 12 },
   two: { label: "2 года", months: 24 },
-};
+} as const;
+
+const RANGE_PRESET_OPTIONS = Object.entries(RANGE_PRESETS).sort(
+  (a, b) => a[1].months - b[1].months,
+);
 
 const buildPeriodFromPreset = (preset: keyof typeof RANGE_PRESETS) => {
   const months = RANGE_PRESETS[preset].months;
@@ -93,6 +98,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
   const [favoriteName, setFavoriteName] = useState("");
   const [favoriteData, setFavoriteData] = useState<Record<string, AnalyticsResponse | null>>({});
   const [metric, setMetric] = useState<Metric>("amount");
+  const [isCumulative, setIsCumulative] = useState<boolean>(false);
   const [grouping, setGrouping] = useState<Grouping>("total");
 
   useEffect(() => {
@@ -153,6 +159,10 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
     });
   }, [favoriteCharts]);
 
+  useEffect(() => {
+    setIsCumulative(false);
+  }, [grouping, rangePreset, resourceType, metric]);
+
   const toggleProperty = (id: number) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
   };
@@ -186,11 +196,44 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
   if (!properties.length) return <div className="surface">Добавьте объект, чтобы увидеть аналитику.</div>;
 
   const resourceSummary = data?.summary.resources || [];
-  const averageDailyAmount = useMemo(() => {
-    if (!data) return 0;
-    const fallbackDays = Math.max(1, (data.monthly?.length || 1) * 30);
-    return data.summary.average_daily_amount ?? data.summary.total_amount / fallbackDays;
+  const orderedMonthly = useMemo(
+    () =>
+      [...(data?.monthly || [])].sort((a, b) => (a.month > b.month ? 1 : -1)),
+    [data],
+  );
+
+  const monthlyWithCumulative = useMemo(() => {
+    let cumulativeAmount = 0;
+    let cumulativeConsumption = 0;
+    return orderedMonthly.map((m) => {
+      cumulativeAmount = m.cumulative_amount ?? cumulativeAmount + m.total_amount;
+      cumulativeConsumption += m.total_consumption;
+      return {
+        ...m,
+        cumulative_amount: cumulativeAmount,
+        cumulative_consumption: cumulativeConsumption,
+      };
+    });
+  }, [orderedMonthly]);
+
+  const averageDaily = useMemo(() => {
+    if (!data) return { amount: 0, consumption: 0, days: 1 };
+    const periodStart = new Date(data.period.start_year, data.period.start_month - 1, 1);
+    const periodEnd = new Date(data.period.end_year, data.period.end_month, 0);
+    const diffDays = Math.max(
+      1,
+      Math.round((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1,
+    );
+    // Среднее в день: общая сумма/объем за выбранный период, делённые на количество календарных дней в этом периоде.
+    return {
+      amount: data.summary.average_daily_amount ?? data.summary.total_amount / diffDays,
+      consumption: data.summary.total_consumption / diffDays,
+      days: diffDays,
+    };
   }, [data]);
+
+  const averageDailyValue = metric === "amount" ? averageDaily.amount : averageDaily.consumption;
+  const averageDailyUnit = metric === "amount" ? "₽" : "ед.";
 
   const monthlyByResource = useMemo(() => {
     const grouped: Record<string, { month: string; consumption: number; amount: number }[]> = {};
@@ -210,20 +253,29 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
     if (!data) return [] as any[];
     if (grouping === "resource" && Object.keys(monthlyByResource).length) {
       const months = Array.from(new Set((data.monthly || []).map((m) => m.month))).sort();
+      const cumulativeByResource: Record<string, number> = {};
       return months.map((month) => {
         const entry: any = { month };
         Object.entries(monthlyByResource).forEach(([res, values]) => {
           const point = values.find((v) => v.month === month);
-          entry[res] = metric === "amount" ? point?.amount || 0 : point?.consumption || 0;
+          const rawValue = metric === "amount" ? point?.amount || 0 : point?.consumption || 0;
+          cumulativeByResource[res] = (cumulativeByResource[res] || 0) + rawValue;
+          entry[res] = isCumulative ? cumulativeByResource[res] : rawValue;
         });
         return entry;
       });
     }
-    return (data.monthly || []).map((m) => ({
+    return monthlyWithCumulative.map((m) => ({
       month: m.month,
-      value: metric === "amount" ? m.total_amount : m.total_consumption,
+      value: isCumulative
+        ? metric === "amount"
+          ? m.cumulative_amount
+          : m.cumulative_consumption
+        : metric === "amount"
+          ? m.total_amount
+          : m.total_consumption,
     }));
-  }, [data, grouping, monthlyByResource, metric]);
+  }, [data, grouping, isCumulative, metric, monthlyByResource, monthlyWithCumulative]);
 
   const topMovers = useMemo(() => {
     if (!data?.monthly?.length) return [] as { label: string; change: number }[];
@@ -285,7 +337,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
           <div>
             <p className="subtitle">Диапазон</p>
             <div className="inline">
-              {Object.entries(RANGE_PRESETS).map(([key, preset]) => (
+              {RANGE_PRESET_OPTIONS.map(([key, preset]) => (
                 <button
                   key={key}
                   type="button"
@@ -350,8 +402,10 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
                 </div>
                 <div className="surface stat-card">
                   <p className="subtitle">Среднее в день</p>
-                  <h2>{averageDailyAmount.toFixed(2)} ₽</h2>
-                  <p className="subtitle">Если данных мало, используем оценку по месяцу</p>
+                  <h2>
+                    {averageDailyValue.toFixed(2)} {averageDailyUnit}
+                  </h2>
+                  <p className="subtitle">По {averageDaily.days} дням выбранного периода</p>
                 </div>
                 <div className="surface stat-card">
                   <p className="subtitle">Прогноз, ₽</p>
@@ -366,7 +420,17 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
                     <h3>Тренды</h3>
                     <p className="subtitle">Гибкий график под выбранные параметры</p>
                   </div>
-                  <span className="badge">{grouping === "resource" ? "Разрез" : "Итог"}</span>
+                  <div className="panel-actions">
+                    <label className="checkbox-inline">
+                      <input
+                        type="checkbox"
+                        checked={isCumulative}
+                        onChange={(e) => setIsCumulative(e.target.checked)}
+                      />
+                      <span>Накопительно</span>
+                    </label>
+                    <span className="badge">{grouping === "resource" ? "Разрез" : "Итог"}</span>
+                  </div>
                 </div>
                 <ResponsiveContainer width="100%" height={320}>
                   {grouping === "resource" && Object.keys(monthlyByResource).length ? (
@@ -427,7 +491,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
                     <p className="subtitle">Накопление выбранной метрики</p>
                   </div>
                   <ResponsiveContainer width="100%" height={280}>
-                    <LineChart data={data.monthly}>
+                    <LineChart data={monthlyWithCumulative}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis />
@@ -435,7 +499,9 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
                       <Legend />
                       <Line
                         type="monotone"
-                        dataKey={metric === "amount" ? "cumulative_amount" : "total_consumption"}
+                        dataKey={
+                          metric === "amount" ? "cumulative_amount" : "cumulative_consumption"
+                        }
                         name={metric === "amount" ? "₽" : "Потребление"}
                         stroke="#ea580c"
                       />
