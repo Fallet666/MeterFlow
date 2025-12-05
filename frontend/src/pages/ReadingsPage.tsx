@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import api from "../api";
 import { Meter, Property } from "../App";
 
@@ -55,6 +55,27 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
     }
   }, [readingDate]);
 
+  const meterHistory = useMemo(
+    () =>
+      items
+        .filter((r) => r.meter === selectedMeter)
+        .sort((a, b) => (a.reading_date < b.reading_date ? 1 : -1)),
+    [items, selectedMeter],
+  );
+
+  const autofillSuggestion = useMemo(() => {
+    if (meterHistory.length < 1) return null;
+    const last = meterHistory[0];
+    const deltas: number[] = [];
+    meterHistory.slice(0, 5).forEach((r, idx) => {
+      const next = meterHistory[idx + 1];
+      if (next) deltas.push(Number(r.value) - Number(next.value));
+    });
+    const avg = deltas.length ? deltas.reduce((a, b) => a + b, 0) / deltas.length : 0;
+    const estimate = Number(last.value) + Math.max(0.01, avg || Number(last.value) * 0.01);
+    return { estimate, last: last.value, avg };
+  }, [meterHistory]);
+
   const addReading = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -93,7 +114,7 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
         </div>
       </div>
 
-      <div className="card">
+      <div className="card glass">
         <div className="section-grid">
           <div>
             <p className="subtitle">Объект</p>
@@ -118,10 +139,10 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
         </div>
       </div>
 
-      {!selectedProperty && <div className="card">Сначала выберите или создайте объект.</div>}
+      {!selectedProperty && <div className="card glass">Сначала выберите или создайте объект.</div>}
 
       {selectedProperty && (
-        <form onSubmit={addReading} className="card reading-form">
+        <form onSubmit={addReading} className="card reading-form glass">
           <div className="section-grid">
             <label>
               Счётчик
@@ -161,6 +182,18 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
                 onChange={(e) => setValue(e.target.value)}
                 required
               />
+              {autofillSuggestion && (
+                <div className="ghost-hint">
+                  Последнее + средний прирост → {autofillSuggestion.estimate.toFixed(3)}
+                  <button
+                    type="button"
+                    className="pill"
+                    onClick={() => setValue(autofillSuggestion.estimate.toFixed(3))}
+                  >
+                    Подставить
+                  </button>
+                </div>
+              )}
             </label>
             <div className="actions">
               <button type="submit" disabled={!meters.length}>
@@ -174,7 +207,7 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
         </form>
       )}
 
-      <div className="card">
+      <div className="card glass">
         <div className="page-header" style={{ alignItems: "center" }}>
           <h3>Журнал показаний</h3>
           <p className="subtitle">
@@ -183,7 +216,7 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
         </div>
         {selectedProperty ? (
           items.length ? (
-            <table>
+            <table className="premium-table">
               <thead>
                 <tr>
                   <th>Счётчик</th>
@@ -196,7 +229,7 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
                 {items.map((r) => {
                   const unit = r.unit || r.meter_detail?.unit;
                   return (
-                    <tr key={r.id}>
+                    <tr key={r.id} className={selectedMeter === r.meter ? "active" : ""}>
                       <td>
                         {RESOURCE_LABELS[r.meter_detail?.resource_type || ""] || r.meter_detail?.resource_type || "Счётчик"}
                         <div className="subtitle">{r.meter_detail?.serial_number || r.meter}</div>
