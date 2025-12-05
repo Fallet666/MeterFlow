@@ -342,6 +342,24 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
 
           {data && (
             <>
+              <div className="stat-grid">
+                <div className="surface stat-card">
+                  <p className="subtitle">Сумма за период</p>
+                  <h2>{data.summary.total_amount.toFixed(2)} ₽</h2>
+                  <p className="subtitle">Все начисления выбранного периода</p>
+                </div>
+                <div className="surface stat-card">
+                  <p className="subtitle">Среднее в день</p>
+                  <h2>{averageDailyAmount.toFixed(2)} ₽</h2>
+                  <p className="subtitle">При отсутствии данных — оценка по месяцу</p>
+                </div>
+                <div className="surface stat-card">
+                  <p className="subtitle">Прогноз, ₽</p>
+                  <h2>{data.forecast_amount.toFixed(2)}</h2>
+                  <p className="subtitle">Оценка по истории выбранных объектов</p>
+                </div>
+              </div>
+
               <div className="surface">
                 <div className="panel-header">
                   <div>
