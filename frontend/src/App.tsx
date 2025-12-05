@@ -34,6 +34,7 @@ function AppShell() {
     const stored = localStorage.getItem("activeProperty");
     return stored ? Number(stored) : null;
   });
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     if (access) {
@@ -67,7 +68,7 @@ function AppShell() {
 
   const navSections = [
     {
-      label: "Рабочее место",
+      label: "Рабочая среда",
       items: [
         { to: "/", label: "Дашборд" },
         { to: "/analytics", label: "Исследователь" },
@@ -91,55 +92,85 @@ function AppShell() {
   return (
     <div className="app-shell">
       {authed && (
-        <aside className="sidebar">
-          <div className="brand-block">
-            <div className="brand-mark" aria-hidden>
-              <img src="/logo.svg" alt="Эмблема EnergoBoard" />
-            </div>
-            <div>
-              <div className="brand-name">EnergoBoard</div>
-              <div className="brand-tagline">Workspace · светлая аналитика</div>
-            </div>
-          </div>
-
-          <div className="sidebar-section">
-            <p className="section-title">Сессия</p>
-            <div className="active-context">
-              <div>
-                <p className="subtitle">Активный пользователь</p>
-                <strong>{user?.username}</strong>
+        <>
+          <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+            <div className="brand-block">
+              <div className="brand-mark" aria-hidden>
+                <img src="/logo.svg" alt="Эмблема EnergoBoard" />
               </div>
-              <button className="ghost" onClick={logout}>
-                Выйти
-              </button>
+              <div>
+                <div className="brand-name">EnergoBoard</div>
+                <div className="brand-tagline">Энергия под контролем</div>
+              </div>
             </div>
-          </div>
 
-          {navSections.map((section) => (
-            <div key={section.label} className="sidebar-section">
-              <p className="section-title">{section.label}</p>
-              <nav className="nav-links">
-                {section.items.map((item) => (
-                  <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? "active" : "")}
-                    >
-                    {item.label}
-                  </NavLink>
-                ))}
-              </nav>
+            <div className="sidebar-section">
+              <p className="section-title">Профиль</p>
+              <div className="active-context">
+                <div>
+                  <p className="subtitle">Активный пользователь</p>
+                  <strong>{user?.username}</strong>
+                </div>
+                <button className="ghost" onClick={logout}>
+                  Выйти
+                </button>
+              </div>
             </div>
-          ))}
-          <div className="sidebar-note">Рабочее место для энергии: объекты, приборы, лента показаний и гибкий исследователь.</div>
-        </aside>
+
+            {navSections.map((section) => (
+              <div key={section.label} className="sidebar-section">
+                <p className="section-title">{section.label}</p>
+                <nav className="nav-links">
+                  {section.items.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className={({ isActive }) => (isActive ? "active" : "")}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </nav>
+              </div>
+            ))}
+            <div className="sidebar-note">
+              Управляйте объектами, приборами и показаниями, анализируйте начисления и формируйте удобные панели.
+            </div>
+          </aside>
+          {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
+        </>
       )}
       <div className="main-area">
         <header className="app-header">
-          <div className="workspace-switcher" aria-hidden>
-            <span className="dot" />
-            EnergoBoard Studio
+          <div className="header-left">
+            {authed && (
+              <button className="icon-button" type="button" onClick={() => setSidebarOpen((v) => !v)} aria-label="Навигация">
+                <span />
+                <span />
+              </button>
+            )}
+            <div className="logo-pill">
+              <div className="logo-mini" aria-hidden>
+                <img src="/logo.svg" alt="Эмблема EnergoBoard" />
+              </div>
+              <div>
+                <div className="brand-name">EnergoBoard</div>
+                <div className="brand-tagline">Светлая аналитика</div>
+              </div>
+            </div>
+            <div className="workspace-switcher" aria-hidden>
+              <span className="dot" />Рабочая среда
+            </div>
           </div>
           {authed && (
             <div className="user-menu">
-              <span className="pill muted">Свежие данные · API</span>
+              {selectedProperty && (
+                <span className="pill muted">
+                  Объект: {properties.find((p) => p.id === selectedProperty)?.name || "—"}
+                </span>
+              )}
+              <span className="pill">Данные обновлены</span>
             </div>
           )}
         </header>

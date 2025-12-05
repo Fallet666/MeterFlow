@@ -90,7 +90,7 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
             Приборы
           </button>
           <button type="button" onClick={() => selectedProperty && onSelectProperty(selectedProperty)}>
-            Обновить
+            Синхронизировать
           </button>
         </div>
       </div>
@@ -112,7 +112,7 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
           </div>
           <div className="info-tile highlight-panel">
             <p className="subtitle">Шаг 2 · Добавьте прибор</p>
-            <p>Заполните форму, чтобы прибор появился в общем списке и аналитике.</p>
+            <p className="subtitle">Заполните форму, чтобы прибор появился в списке и аналитике.</p>
           </div>
         </div>
       </div>
@@ -165,13 +165,13 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
         </div>
       )}
 
-        <div className="surface">
-          <div className="page-header" style={{ alignItems: "center" }}>
-            <div>
-              <h3>Живой список</h3>
-              <p className="subtitle">Быстрое управление приборами без переходов и лишних таблиц.</p>
-            </div>
+      <div className="surface">
+        <div className="page-header" style={{ alignItems: "center" }}>
+          <div>
+            <h3>Живой список</h3>
+            <p className="subtitle">Быстрое управление приборами без переходов и лишних таблиц.</p>
           </div>
+        </div>
         {selectedProperty ? (
           <div className="meter-stack">
             {meters.map((m) => (

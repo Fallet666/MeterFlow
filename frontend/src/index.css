@@ -1,8 +1,8 @@
 :root {
-  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Manrope", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   font-weight: 400;
-  color: #111827;
+  color: #0f172a;
   background-color: #f6f7fb;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -15,7 +15,7 @@ a {
 }
 
 a:hover {
-  color: #c2410c;
+  color: #ea580c;
 }
 
 * {
@@ -34,7 +34,7 @@ body {
 
 h1 {
   margin: 0 0 12px;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 800;
   letter-spacing: -0.01em;
   color: #0f172a;
@@ -42,7 +42,7 @@ h1 {
 
 h3 {
   margin: 0 0 12px;
-  font-size: 18px;
+  font-size: 19px;
   color: #111827;
 }
 
