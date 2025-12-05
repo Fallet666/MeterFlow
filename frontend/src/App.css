@@ -184,7 +184,7 @@ button.pill.active {
 }
 
 .content {
-  padding: 28px clamp(18px, 4vw, 44px) 40px;
+  padding: 24px clamp(16px, 4vw, 36px) 36px;
 }
 
 .page-wrapper {
@@ -192,21 +192,20 @@ button.pill.active {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
 }
 
 .page {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .page-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
 }
 
 .subtitle {
@@ -218,12 +217,9 @@ button.pill.active {
   background: linear-gradient(145deg, rgba(19, 26, 41, 0.96), rgba(11, 17, 30, 0.94));
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px 22px;
+  padding: 18px 20px;
   box-shadow: var(--shadow);
   transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .card:hover {
@@ -234,7 +230,7 @@ button.pill.active {
 
 .inline {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -242,7 +238,7 @@ button.pill.active {
 .section-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 input,
@@ -310,8 +306,6 @@ label {
   overflow-x: auto;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: var(--panel-muted);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 table {
@@ -398,9 +392,7 @@ tr.active {
   padding: 20px 22px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-height: 90vh;
-  overflow-y: auto;
+  gap: 14px;
 }
 
 .modal h3 {
@@ -570,25 +562,4 @@ button.ghost {
   .table-wrapper {
     border-radius: 10px;
   }
-}
-
-.error-fallback {
-  min-height: 100vh;
-  background: var(--bg);
-  display: grid;
-  place-items: center;
-  padding: 32px;
-}
-
-.error-panel {
-  max-width: 520px;
-  width: 100%;
-  padding: 26px 28px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: linear-gradient(145deg, rgba(14, 20, 32, 0.96), rgba(8, 12, 24, 0.94));
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }

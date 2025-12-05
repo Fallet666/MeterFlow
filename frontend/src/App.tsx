@@ -17,7 +17,6 @@ import {
   PropertiesPage,
   ReadingsPage,
 } from "./pages";
-import ErrorBoundary from "./components/ErrorBoundary";
 import "./App.css";
 
 export type Property = { id: number; name: string; address: string };
@@ -104,9 +103,7 @@ function AppShell() {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    isActive ||
-                    location.pathname.startsWith(`${item.to}/`) ||
-                    (item.to === "/" && location.pathname.startsWith("/dashboard"))
+                    isActive || location.pathname.startsWith(`${item.to}/`)
                       ? "active"
                       : undefined
                   }
@@ -138,23 +135,6 @@ function AppShell() {
             />
             <Route
               path="/"
-              element={
-                authed ? (
-                  <Dashboard
-                    selectedProperty={selectedProperty}
-                    onSelectProperty={(id) => {
-                      setSelectedProperty(id);
-                      localStorage.setItem("activeProperty", String(id));
-                    }}
-                    properties={properties}
-                  />
-                ) : (
-                  <Navigate to="/auth" />
-                )
-              }
-            />
-            <Route
-              path="/dashboard"
               element={
                 authed ? (
                   <Dashboard
@@ -233,7 +213,6 @@ function AppShell() {
                 )
               }
             />
-            <Route path="*" element={<Navigate to={authed ? "/" : "/auth"} replace />} />
           </Routes>
         </div>
       </main>
@@ -242,13 +221,9 @@ function AppShell() {
 }
 
 export default function App() {
-  const basename = import.meta.env.BASE_URL || "/";
-
   return (
-    <ErrorBoundary>
-      <BrowserRouter basename={basename}>
-        <AppShell />
-      </BrowserRouter>
-    </ErrorBoundary>
+    <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
   );
 }
