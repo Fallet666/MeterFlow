@@ -87,8 +87,6 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
   const [favoriteCharts, setFavoriteCharts] = useState<FavoriteChartConfig[]>([]);
   const [favoriteName, setFavoriteName] = useState("");
   const [favoriteData, setFavoriteData] = useState<Record<string, AnalyticsResponse | null>>({});
-  const [comparisonOpen, setComparisonOpen] = useState(false);
-  const [comparisonSelection, setComparisonSelection] = useState<number[]>([]);
 
   useEffect(() => {
     if (selectedProperty && !selectedIds.length) {
@@ -148,12 +146,6 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
     });
   }, [favoriteCharts]);
 
-  useEffect(() => {
-    if (!comparisonSelection.length && comparisonCandidates.length) {
-      setComparisonSelection(comparisonCandidates.slice(0, 2).map((c) => c.id));
-    }
-  }, [comparisonCandidates]);
-
   const toggleProperty = (id: number) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
   };
@@ -182,7 +174,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
     persistFavorites(favoriteCharts.filter((f) => f.id !== id));
   };
 
-  if (!properties.length) return <div className="card glass">Добавьте объект, чтобы увидеть аналитику.</div>;
+  if (!properties.length) return <div className="card">Добавьте объект, чтобы увидеть аналитику.</div>;
 
   const resourceSummary = data?.summary.resources || [];
   const averageDailyAmount = useMemo(() => {
@@ -205,41 +197,6 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
     return grouped;
   }, [data]);
 
-  const comparisonUnit = useMemo(() => {
-    if (!resourceType) return "";
-    return resourceSummary.find((r) => r.resource_type === resourceType)?.unit || "";
-  }, [resourceSummary, resourceType]);
-
-  const comparisonCandidates = useMemo(() => {
-    if (!data) return [];
-    return data.comparison.map((row) => ({
-      id: row.property__id,
-      name: row.property__name,
-      amount: row.total_amount,
-      consumption: row.total_consumption,
-    }));
-  }, [data]);
-
-  const comparisonStats = useMemo(() => {
-    if (!data) return [];
-    const months = Math.max(1, data.monthly.length);
-    return comparisonCandidates
-      .filter((c) => comparisonSelection.includes(c.id))
-      .map((c) => ({
-        ...c,
-        avgMonthly: c.amount / months,
-        intensity: c.consumption ? c.amount / c.consumption : 0,
-      }));
-  }, [comparisonCandidates, comparisonSelection, data]);
-
-  const toggleCompare = (id: number) => {
-    setComparisonSelection((prev) => {
-      if (prev.includes(id)) return prev.filter((v) => v !== id);
-      if (prev.length >= 3) return prev;
-      return [...prev, id];
-    });
-  };
-
   return (
     <div className="page">
       <div className="page-header">
@@ -249,7 +206,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
         </div>
       </div>
 
-      <div className="card glass">
+      <div className="card">
         <div className="section-grid" style={{ alignItems: "flex-end" }}>
           <div>
             <p className="subtitle">Объекты</p>
@@ -295,17 +252,10 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
               <option value="heating">Отопление</option>
             </select>
           </div>
-          <div className="align-end">
-            <p className="subtitle">Сравнение</p>
-            <button type="button" onClick={() => setComparisonOpen(true)}>
-              Сравнить объекты
-            </button>
-            <p className="subtitle">До 3 объектов, без запроса к API</p>
-          </div>
         </div>
       </div>
 
-      <div className="card glass">
+      <div className="card">
         <div className="section-grid" style={{ alignItems: "flex-end" }}>
           <div>
             <p className="subtitle">Конструктор графиков</p>
@@ -348,17 +298,17 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
       {data && (
         <>
           <div className="section-grid">
-            <div className="card glass">
+            <div className="card">
               <p className="subtitle">Начисления за период</p>
               <h3 style={{ fontSize: 28 }}>{data.summary.total_amount.toFixed(2)} ₽</h3>
               <p className="subtitle">Среднесуточные начисления {averageDailyAmount.toFixed(2)} ₽</p>
             </div>
-            <div className="card glass">
+            <div className="card">
               <p className="subtitle">Сумма начислений</p>
               <h3 style={{ fontSize: 28 }}>{data.summary.total_amount.toFixed(2)} ₽</h3>
               <p className="subtitle">Прогноз: {data.forecast_amount.toFixed(2)} ₽</p>
             </div>
-            <div className="card glass">
+            <div className="card">
               <p className="subtitle">Пиковый месяц</p>
               <h3 style={{ fontSize: 24 }}>{data.summary.peak_month || "—"}</h3>
               <p className="subtitle">Отслеживайте всплески начислений по сумме.</p>
@@ -366,7 +316,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
           </div>
 
           {resourceSummary.length > 0 && (
-            <div className="card glass">
+            <div className="card">
               <div className="page-header" style={{ alignItems: "center" }}>
                 <h3>Всего за период по ресурсам</h3>
                 <p className="subtitle">Потребление и начисления для каждого типа ресурса</p>
@@ -387,7 +337,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
             </div>
           )}
 
-          <div className="card glass">
+          <div className="card">
             <div className="page-header" style={{ alignItems: "center" }}>
               <h3>Начисления по месяцам (₽)</h3>
               <p className="subtitle">Детализация выбранного диапазона</p>
@@ -404,7 +354,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
             </ResponsiveContainer>
           </div>
 
-          <div className="card glass">
+          <div className="card">
             <div className="page-header" style={{ alignItems: "center" }}>
               <h3>Накопительный итог (₽)</h3>
               <p className="subtitle">Суммарные начисления с начала периода</p>
@@ -422,7 +372,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
           </div>
 
           {Object.entries(monthlyByResource).map(([resource, points]) => (
-            <div className="card glass" key={resource}>
+            <div className="card" key={resource}>
               <div className="page-header" style={{ alignItems: "center" }}>
                 <h3>{RESOURCE_LABELS[resource] || resource}: потребление</h3>
                 <p className="subtitle">Единицы: {resourceSummary.find((r) => r.resource_type === resource)?.unit || "ед."}</p>
@@ -441,7 +391,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
           ))}
 
           {favoriteCharts.length > 0 && (
-            <div className="card glass">
+            <div className="card">
               <div className="page-header" style={{ alignItems: "center" }}>
                 <h3>Избранные графики</h3>
                 <p className="subtitle">Сохранённые конфигурации как мини-виджеты</p>
@@ -483,12 +433,12 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
             </div>
           )}
 
-          <div className="card glass">
+          <div className="card">
             <div className="page-header" style={{ alignItems: "center" }}>
               <h3>Сравнение объектов</h3>
               <p className="subtitle">Суммарные начисления и потребление</p>
             </div>
-            <table className="premium-table">
+            <table>
               <thead>
                 <tr>
                   <th>Объект</th>
@@ -502,7 +452,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
                     <td>{row.property__name}</td>
                     <td>
                       {resourceType
-                        ? `${row.total_consumption.toFixed(2)} ${comparisonUnit}`
+                        ? `${row.total_consumption.toFixed(2)} ${resourceSummary[0]?.unit || ""}`
                         : "—"}
                     </td>
                     <td>{row.total_amount.toFixed(2)} ₽</td>
@@ -514,62 +464,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
         </>
       )}
 
-      {loading && <div className="card glass">Загрузка...</div>}
-
-      {comparisonOpen && (
-        <div className="compare-overlay" onClick={() => setComparisonOpen(false)}>
-          <div className="compare-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="page-header">
-              <div>
-                <h3>Сравнение объектов</h3>
-                <p className="subtitle">Быстрая оценка по текущей выдаче аналитики.</p>
-              </div>
-              <button className="pill" type="button" onClick={() => setComparisonOpen(false)}>
-                Закрыть
-              </button>
-            </div>
-
-            <div className="compare-picker">
-              {comparisonCandidates.map((item) => (
-                <label key={item.id} className={`compare-chip ${comparisonSelection.includes(item.id) ? "active" : ""}`}>
-                  <input
-                    type="checkbox"
-                    checked={comparisonSelection.includes(item.id)}
-                    onChange={() => toggleCompare(item.id)}
-                  />
-                  <span>{item.name}</span>
-                </label>
-              ))}
-            </div>
-
-            <div className="compare-grid">
-              {comparisonStats.map((row) => (
-                <div key={row.id} className="compare-card">
-                  <div className="stack">
-                    <strong>{row.name}</strong>
-                    <span className="subtitle subtle">{row.consumption.toFixed(2)} {comparisonUnit}</span>
-                  </div>
-                  <div className="stat-grid">
-                    <div>
-                      <p className="subtitle">Всего</p>
-                      <h3 className="accent-number">{row.amount.toFixed(2)} ₽</h3>
-                    </div>
-                    <div>
-                      <p className="subtitle">Среднемес.</p>
-                      <h3 className="accent-number">{row.avgMonthly.toFixed(2)} ₽</h3>
-                    </div>
-                    <div>
-                      <p className="subtitle">Интенсивность</p>
-                      <h3 className="accent-number">{row.intensity.toFixed(2)}</h3>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {comparisonStats.length === 0 && <p className="subtitle">Выберите до трёх объектов.</p>}
-            </div>
-          </div>
-        </div>
-      )}
+      {loading && <div className="card">Загрузка...</div>}
     </div>
   );
 }

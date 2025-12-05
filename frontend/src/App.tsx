@@ -34,9 +34,6 @@ function AppShell() {
     const stored = localStorage.getItem("activeProperty");
     return stored ? Number(stored) : null;
   });
-  const [meters, setMeters] = useState<Meter[]>([]);
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [paletteQuery, setPaletteQuery] = useState("");
 
   useEffect(() => {
     if (access) {
@@ -47,10 +44,6 @@ function AppShell() {
           localStorage.setItem("activeProperty", String(data[0].id));
         }
       });
-      api
-        .get("meters/")
-        .then(({ data }) => setMeters(data))
-        .catch(() => undefined);
     }
   }, [access]);
 
@@ -71,58 +64,6 @@ function AppShell() {
   };
 
   const authed = useMemo(() => !!access, [access]);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setPaletteOpen((prev) => !prev);
-      }
-      if (e.key === "Escape") setPaletteOpen(false);
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
-  const paletteItems = useMemo(() => {
-    const base = [
-      { label: "Дашборд", action: () => navigate("/") },
-      { label: "Объекты", action: () => navigate("/properties") },
-      { label: "Счётчики", action: () => navigate("/meters") },
-      { label: "Показания", action: () => navigate("/readings") },
-      { label: "Аналитика", action: () => navigate("/analytics") },
-    ];
-
-    const propertyItems = properties.map((p) => ({
-      label: `Объект · ${p.name}`,
-      action: () => {
-        setSelectedProperty(p.id);
-        localStorage.setItem("activeProperty", String(p.id));
-        navigate("/properties");
-        setPaletteOpen(false);
-      },
-    }));
-
-    const meterItems = meters.map((m) => ({
-      label: `Счётчик · ${m.serial_number || m.id}`,
-      action: () => {
-        setSelectedProperty(m.property);
-        localStorage.setItem("activeProperty", String(m.property));
-        navigate("/meters");
-        setPaletteOpen(false);
-      },
-    }));
-
-    const query = paletteQuery.toLowerCase();
-    return [...base, ...propertyItems, ...meterItems].filter((item) =>
-      item.label.toLowerCase().includes(query),
-    );
-  }, [paletteQuery, properties, meters]);
-
-  const closePalette = () => {
-    setPaletteOpen(false);
-    setPaletteQuery("");
-  };
 
   return (
     <div className="app-shell">
@@ -152,122 +93,87 @@ function AppShell() {
               element={<AuthPage onAuthenticated={handleAuth} onRegister={authApi.register} onLogin={authApi.login} />}
             />
             <Route
-              path="/"
-              element={
-                authed ? (
-                  <Dashboard
-                    selectedProperty={selectedProperty}
-                    onSelectProperty={(id) => {
-                      setSelectedProperty(id);
-                      localStorage.setItem("activeProperty", String(id));
-                    }}
-                    properties={properties}
-                  />
-                ) : (
-                  <Navigate to="/auth" />
-                )
-              }
-            />
-            <Route
-              path="/properties"
-              element={
-                authed ? (
-                  <PropertiesPage
-                    properties={properties}
-                    onUpdated={setProperties}
-                    selectedProperty={selectedProperty}
-                    onSelect={(id) => {
-                      setSelectedProperty(id);
-                      localStorage.setItem("activeProperty", String(id));
-                    }}
-                  />
-                ) : (
-                  <Navigate to="/auth" />
-                )
-              }
-            />
-            <Route
-              path="/meters"
-              element={
-                authed ? (
-                  <MetersPage
-                    selectedProperty={selectedProperty}
-                    properties={properties}
-                    onSelectProperty={(id) => {
-                      setSelectedProperty(id);
-                      localStorage.setItem("activeProperty", String(id));
-                    }}
-                  />
-                ) : (
-                  <Navigate to="/auth" />
-                )
-              }
-            />
-            <Route
-              path="/readings"
-              element={
-                authed ? (
-                  <ReadingsPage
-                    selectedProperty={selectedProperty}
-                    properties={properties}
-                    onSelectProperty={(id) => {
-                      setSelectedProperty(id);
-                      localStorage.setItem("activeProperty", String(id));
-                    }}
-                  />
-                ) : (
-                  <Navigate to="/auth" />
-                )
-              }
-            />
-            <Route
-              path="/analytics"
-              element={
-                authed ? (
-                  <AnalyticsPage selectedProperty={selectedProperty} properties={properties} />
-                ) : (
-                  <Navigate to="/auth" />
-                )
-              }
-            />
+            path="/"
+            element={
+              authed ? (
+                <Dashboard
+                  selectedProperty={selectedProperty}
+                  onSelectProperty={(id) => {
+                    setSelectedProperty(id);
+                    localStorage.setItem("activeProperty", String(id));
+                  }}
+                  properties={properties}
+                />
+              ) : (
+                <Navigate to="/auth" />
+              )
+            }
+          />
+          <Route
+            path="/properties"
+            element={
+              authed ? (
+                <PropertiesPage
+                  properties={properties}
+                  onUpdated={setProperties}
+                  selectedProperty={selectedProperty}
+                  onSelect={(id) => {
+                    setSelectedProperty(id);
+                    localStorage.setItem("activeProperty", String(id));
+                  }}
+                />
+              ) : (
+                <Navigate to="/auth" />
+              )
+            }
+          />
+          <Route
+            path="/meters"
+            element={
+              authed ? (
+                <MetersPage
+                  selectedProperty={selectedProperty}
+                  properties={properties}
+                  onSelectProperty={(id) => {
+                    setSelectedProperty(id);
+                    localStorage.setItem("activeProperty", String(id));
+                  }}
+                />
+              ) : (
+                <Navigate to="/auth" />
+              )
+            }
+          />
+          <Route
+            path="/readings"
+            element={
+              authed ? (
+                <ReadingsPage
+                  selectedProperty={selectedProperty}
+                  properties={properties}
+                  onSelectProperty={(id) => {
+                    setSelectedProperty(id);
+                    localStorage.setItem("activeProperty", String(id));
+                  }}
+                />
+              ) : (
+                <Navigate to="/auth" />
+              )
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              authed ? (
+                <AnalyticsPage selectedProperty={selectedProperty} properties={properties} />
+              ) : (
+                <Navigate to="/auth" />
+              )
+            }
+          />
           </Routes>
         </div>
       </main>
-
-      {authed && paletteOpen && (
-        <div className={`command-palette ${paletteOpen ? "open" : ""}`} onClick={closePalette}>
-          <div className="palette-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="palette-header">
-              <span>Command Palette</span>
-              <button className="pill" onClick={closePalette} type="button">
-                Esc
-              </button>
-            </div>
-            <input
-              autoFocus
-              placeholder="Ищите страницы, объекты или счётчики"
-              value={paletteQuery}
-              onChange={(e) => setPaletteQuery(e.target.value)}
-            />
-            <div className="palette-list">
-              {paletteItems.length === 0 && <p className="subtitle">Ничего не найдено</p>}
-              {paletteItems.map((item) => (
-                <button
-                  key={item.label}
-                  className="palette-item"
-                  type="button"
-                  onClick={() => {
-                    item.action();
-                    closePalette();
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

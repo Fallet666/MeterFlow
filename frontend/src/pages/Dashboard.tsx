@@ -1,17 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { useEffect, useState } from "react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import api from "../api";
-import { Meter, Property } from "../App";
+import { Property } from "../App";
 
 const RESOURCE_LABELS: Record<string, string> = {
   electricity: "Электричество",
@@ -57,9 +47,6 @@ const getMonthKey = (dateObj: Date) => `${dateObj.getFullYear()}-${String(dateOb
 export function Dashboard({ selectedProperty, properties, onSelectProperty }: Props) {
   const [forecast, setForecast] = useState<number>(0);
   const [readings, setReadings] = useState<any[]>([]);
-  const [propertyReadings, setPropertyReadings] = useState<any[]>([]);
-  const [meters, setMeters] = useState<Meter[]>([]);
-  const [estimatorMeter, setEstimatorMeter] = useState<number | null>(null);
   const [charges, setCharges] = useState<AnalyticsResponse | null>(null);
   const [favoriteCharts, setFavoriteCharts] = useState<FavoriteChartConfig[]>([]);
   const [favoritesData, setFavoritesData] = useState<Record<string, AnalyticsResponse>>({});
@@ -77,16 +64,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
         .then(({ data }) => setForecast(Number(data.forecast_amount) || 0));
       api
         .get("readings/", { params: { meter__property: selectedProperty } })
-        .then(({ data }) => {
-          setReadings(data.slice(0, 5));
-          setPropertyReadings(data);
-        });
-      api
-        .get<Meter[]>("meters/", { params: { property: selectedProperty } })
-        .then(({ data }) => {
-          setMeters(data);
-          if (!estimatorMeter && data.length) setEstimatorMeter(data[0].id);
-        });
+        .then(({ data }) => setReadings(data.slice(0, 5)));
       const startDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
       api
         .get<AnalyticsResponse>("analytics/", {
@@ -100,7 +78,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
         })
         .then(({ data }) => setCharges(data));
     }
-  }, [selectedProperty, estimatorMeter]);
+  }, [selectedProperty]);
 
   useEffect(() => {
     const stored = localStorage.getItem(FAVORITES_KEY);
@@ -171,119 +149,20 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
     };
   };
 
-  const estimatorSeries = useMemo(() => {
-    if (!estimatorMeter) return [];
-    return propertyReadings
-      .filter((r) => r.meter === estimatorMeter)
-      .sort((a, b) => (a.reading_date > b.reading_date ? 1 : -1))
-      .slice(-10)
-      .map((item) => ({
-        date: item.reading_date,
-        value: Number(item.value),
-      }));
-  }, [propertyReadings, estimatorMeter]);
-
-  const estimator = useMemo(() => {
-    if (estimatorSeries.length < 2) return { daily: 0, monthly: 0 };
-    const deltas: number[] = [];
-    for (let i = 1; i < estimatorSeries.length; i += 1) {
-      const prev = estimatorSeries[i - 1];
-      const curr = estimatorSeries[i];
-      const dayDiff = Math.max(
-        1,
-        (new Date(curr.date).getTime() - new Date(prev.date).getTime()) / (1000 * 60 * 60 * 24),
-      );
-      deltas.push((curr.value - prev.value) / dayDiff);
-    }
-    const avgDaily = deltas.reduce((a, b) => a + b, 0) / deltas.length;
-
-    const rateSamples = propertyReadings
-      .filter((r) => r.meter === estimatorMeter && r.amount_value)
-      .sort((a, b) => (a.reading_date > b.reading_date ? -1 : 1))
-      .slice(0, 6);
-    const unitRate =
-      rateSamples.length > 0
-        ? rateSamples.reduce((sum, r) => sum + Number(r.amount_value) / Math.max(1, Number(r.value)), 0) /
-          rateSamples.length
-        : 0;
-
-    return {
-      daily: Math.max(0, avgDaily),
-      monthly: Math.max(0, avgDaily * 30 * (unitRate || 1)),
-    };
-  }, [estimatorSeries, propertyReadings, estimatorMeter]);
-
-  const healthStatuses = useMemo(() => {
-    const map: Record<number, { status: string; tone: string; hint: string }> = {};
-    meters.forEach((m) => {
-      const meterReadings = propertyReadings
-        .filter((r) => r.meter === m.id)
-        .sort((a, b) => (a.reading_date < b.reading_date ? 1 : -1));
-
-      if (!meterReadings.length) {
-        map[m.id] = { status: "нет данных", tone: "gray", hint: "Показаний пока нет" };
-        return;
-      }
-
-      const latest = new Date(meterReadings[0].reading_date);
-      const daysDiff = (Date.now() - latest.getTime()) / (1000 * 60 * 60 * 24);
-      if (daysDiff > 60) {
-        map[m.id] = { status: "неактивен", tone: "amber", hint: "Нет записей более 60 дней" };
-        return;
-      }
-
-      const deltas: number[] = [];
-      meterReadings.slice(0, 6).forEach((r, idx) => {
-        const next = meterReadings[idx + 1];
-        if (next) deltas.push(Number(r.value) - Number(next.value));
-      });
-      const spikes = deltas.filter((d, i) => i > 0 && d > deltas[i - 1] * 1.5);
-      if (spikes.length > 0) {
-        map[m.id] = { status: "аномалия", tone: "rose", hint: "Резкий скачок последних записей" };
-        return;
-      }
-
-      const avg = deltas.reduce((a, b) => a + b, 0) / Math.max(1, deltas.length);
-      const variance =
-        deltas.reduce((sum, d) => sum + (d - avg) ** 2, 0) / Math.max(1, deltas.length);
-      if (variance < 1 && deltas.length >= 3) {
-        map[m.id] = { status: "номинал", tone: "emerald", hint: "Стабильные показания" };
-        return;
-      }
-
-      const recentCount = meterReadings.filter((r) => {
-        const diff = (Date.now() - new Date(r.reading_date).getTime()) / (1000 * 60 * 60 * 24);
-        return diff <= 30;
-      }).length;
-
-      if (recentCount >= 4) {
-        map[m.id] = { status: "активен", tone: "cyan", hint: "Регулярные записи" };
-      } else {
-        map[m.id] = { status: "под наблюдением", tone: "blue", hint: "Записи редкие" };
-      }
-    });
-
-    return map;
-  }, [meters, propertyReadings]);
-
   return (
     <div className="page">
       <div className="page-header">
         <div>
           <h1>Дашборд</h1>
-          <p className="subtitle">Премиальная консоль состояния потребления и начислений.</p>
+          <p className="subtitle">Быстрый обзор начислений и последних показаний.</p>
         </div>
-        <div className="pill ghost">Ctrl + K — палитра команд</div>
       </div>
 
-      <div className="card glass">
+      <div className="card">
         <div className="section-grid">
           <div>
-            <p className="subtitle">Активный объект</p>
-            <select
-              value={selectedProperty || ""}
-              onChange={(e) => onSelectProperty(Number(e.target.value))}
-            >
+            <p className="subtitle">Объект</p>
+            <select value={selectedProperty || ""} onChange={(e) => onSelectProperty(Number(e.target.value))}>
               <option value="" disabled>
                 Выберите объект
               </option>
@@ -296,24 +175,35 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
           </div>
           <div>
             <p className="subtitle">Прогноз на текущий месяц</p>
-            <h3 className="accent-number">{forecast.toFixed(2)} ₽</h3>
-            <p className="subtitle subtle">На основе тренда за прошлые месяцы</p>
-          </div>
-          <div>
-            <p className="subtitle">Итог текущего месяца</p>
-            <h3 className="accent-number">{currentMonthAmount.toFixed(2)} ₽</h3>
-            <p className="subtitle subtle">{currentMonthKey}</p>
-          </div>
-          <div>
-            <p className="subtitle">Дельта к предыдущему</p>
-            <h3 className="accent-number">{(currentMonthAmount - previousMonthAmount).toFixed(2)} ₽</h3>
-            <p className="subtitle subtle">Сравнение с {previousMonthKey}</p>
+            <h3 style={{ margin: 0, fontSize: "26px" }}>{forecast.toFixed(2)} ₽</h3>
           </div>
         </div>
       </div>
 
+      {charges && (
+        <div className="section-grid">
+          <div className="card">
+            <p className="subtitle">Фактические начисления</p>
+            <h3 style={{ fontSize: 26 }}>{currentMonthAmount.toFixed(2)} ₽</h3>
+            <p className="subtitle">Сумма за {currentMonthKey}</p>
+          </div>
+          <div className="card">
+            <p className="subtitle">Оценка до конца месяца</p>
+            <h3 style={{ fontSize: 26 }}>{forecast.toFixed(2)} ₽</h3>
+            <p className="subtitle">На основе прошлых месяцев</p>
+          </div>
+          <div className="card">
+            <p className="subtitle">Разница с прошлым</p>
+            <h3 style={{ fontSize: 26 }}>
+              {(currentMonthAmount - previousMonthAmount).toFixed(2)} ₽
+            </h3>
+            <p className="subtitle">Сравнение {currentMonthKey} и {previousMonthKey}</p>
+          </div>
+        </div>
+      )}
+
       {favoriteCharts.length > 0 && (
-        <div className="card glass">
+        <div className="card">
           <div className="page-header" style={{ alignItems: "center" }}>
             <h3>Избранные графики</h3>
             <p className="subtitle">Мини-виджеты из конструктора аналитики</p>
@@ -347,96 +237,12 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
         </div>
       )}
 
-      <div className="section-grid">
-        <div className="card glass">
-          <div className="page-header" style={{ alignItems: "center" }}>
-            <h3>Real-time Estimator</h3>
-            <p className="subtitle">Прогноз потребления и стоимости по последним записям.</p>
-          </div>
-          <div className="section-grid">
-            <div>
-              <p className="subtitle">Счётчик</p>
-              <select value={estimatorMeter || ""} onChange={(e) => setEstimatorMeter(Number(e.target.value))}>
-                {meters.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {RESOURCE_LABELS[m.resource_type] || m.resource_type} · {m.serial_number}
-                  </option>
-                ))}
-              </select>
-              <div className="stat-grid">
-                <div>
-                  <p className="subtitle">Дневной прогноз</p>
-                  <h3 className="accent-number">{estimator.daily.toFixed(2)}</h3>
-                  <p className="subtitle subtle">Средний прирост в сутки</p>
-                </div>
-                <div>
-                  <p className="subtitle">Месячный чек</p>
-                  <h3 className="accent-number">{estimator.monthly.toFixed(2)} ₽</h3>
-                  <p className="subtitle subtle">Расчётно на 30 дней</p>
-                </div>
-              </div>
-            </div>
-            <div className="spark-card">
-              <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={estimatorSeries}>
-                  <defs>
-                    <linearGradient id="estimatorGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#67e8f9" stopOpacity={0.7} />
-                      <stop offset="95%" stopColor="#1f2937" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="date" hide />
-                  <YAxis hide />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="value" stroke="#67e8f9" fill="url(#estimatorGradient)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        <div className="card glass">
-          <div className="page-header" style={{ alignItems: "center" }}>
-            <h3>Монитор здоровья счётчиков</h3>
-            <p className="subtitle">Фронтенд-проверка активности и стабильности.</p>
-          </div>
-          <table className="premium-table">
-            <thead>
-              <tr>
-                <th>Счётчик</th>
-                <th>Статус</th>
-                <th>Комментарий</th>
-              </tr>
-            </thead>
-            <tbody>
-              {meters.map((m) => (
-                <tr key={m.id}>
-                  <td>
-                    <div className="stack">
-                      <span>{RESOURCE_LABELS[m.resource_type] || m.resource_type}</span>
-                      <span className="subtitle subtle">{m.serial_number}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge tone-${healthStatuses[m.id]?.tone || "gray"}`}>
-                      {healthStatuses[m.id]?.status || "—"}
-                    </span>
-                  </td>
-                  <td className="subtitle">{healthStatuses[m.id]?.hint || "Данных мало"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="card glass">
+      <div className="card">
         <div className="page-header" style={{ alignItems: "center" }}>
           <h3>Последние показания</h3>
           <p className="subtitle">Пять последних записей по выбранному объекту.</p>
         </div>
-        <table className="premium-table">
+        <table>
           <thead>
             <tr>
               <th>Счётчик</th>

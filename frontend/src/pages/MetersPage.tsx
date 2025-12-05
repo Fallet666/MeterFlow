@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import api from "../api";
 import { Meter, Property } from "../App";
-import { Line, LineChart, ResponsiveContainer, Tooltip } from "recharts";
 
 const RESOURCE_LABELS: Record<string, string> = {
   electricity: "Электричество",
@@ -24,17 +23,12 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
   const [serial, setSerial] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [propertyReadings, setPropertyReadings] = useState<any[]>([]);
 
   useEffect(() => {
     if (selectedProperty) {
       api.get("meters/", { params: { property: selectedProperty } }).then(({ data }) => setMeters(data));
-      api
-        .get("readings/", { params: { meter__property: selectedProperty } })
-        .then(({ data }) => setPropertyReadings(data));
     } else {
       setMeters([]);
-      setPropertyReadings([]);
     }
   }, [selectedProperty]);
 
@@ -74,33 +68,6 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
     setFeedback("Сохранено");
   };
 
-  const meterHealth = (meter: Meter) => {
-    const list = propertyReadings
-      .filter((r) => r.meter === meter.id)
-      .sort((a, b) => (a.reading_date < b.reading_date ? 1 : -1));
-    if (!list.length) return { label: "нет данных", tone: "gray" };
-    const lastDate = new Date(list[0].reading_date);
-    const days = (Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
-    if (days > 60) return { label: "неактивен", tone: "amber" };
-    const deltas: number[] = [];
-    list.slice(0, 6).forEach((r, idx) => {
-      const next = list[idx + 1];
-      if (next) deltas.push(Number(r.value) - Number(next.value));
-    });
-    const spikes = deltas.filter((d, i) => i > 0 && d > deltas[i - 1] * 1.4);
-    if (spikes.length) return { label: "аномалия", tone: "rose" };
-    const recent = list.filter((r) => (Date.now() - new Date(r.reading_date).getTime()) / (1000 * 60 * 60 * 24) < 30);
-    if (recent.length >= 4) return { label: "активен", tone: "cyan" };
-    return { label: "номинал", tone: "emerald" };
-  };
-
-  const miniSeries = (meter: Meter) =>
-    propertyReadings
-      .filter((r) => r.meter === meter.id)
-      .sort((a, b) => (a.reading_date > b.reading_date ? 1 : -1))
-      .slice(-8)
-      .map((r) => ({ date: r.reading_date, value: Number(r.value) }));
-
   return (
     <div className="page">
       <div className="page-header">
@@ -110,7 +77,7 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
         </div>
       </div>
 
-      <div className="card glass">
+      <div className="card">
         <div className="section-grid">
           <div>
             <p className="subtitle">Объект</p>
@@ -136,11 +103,11 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
       </div>
 
       {!selectedProperty && (
-        <div className="card glass">Сначала выберите или создайте объект недвижимости.</div>
+        <div className="card">Сначала выберите или создайте объект недвижимости.</div>
       )}
 
       {selectedProperty && (
-        <form onSubmit={addMeter} className="card glass">
+        <form onSubmit={addMeter} className="card">
           <div className="inline">
             <select value={resourceType} onChange={(e) => setResourceType(e.target.value)}>
               {Object.entries(RESOURCE_LABELS).map(([key, label]) => (
@@ -160,21 +127,19 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
         </form>
       )}
 
-      <div className="card glass">
+      <div className="card">
         <div className="page-header" style={{ alignItems: "center" }}>
           <h3>Список счётчиков</h3>
           <p className="subtitle">Все приборы учета на выбранном объекте.</p>
         </div>
         {selectedProperty ? (
           meters.length ? (
-            <table className="premium-table">
+            <table>
               <thead>
                 <tr>
                   <th>Тип ресурса</th>
                   <th>Ед. изм.</th>
                   <th>Серийный номер</th>
-                  <th>Здоровье</th>
-                  <th>Динамика</th>
                   <th></th>
                 </tr>
               </thead>
@@ -184,24 +149,6 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
                     <td>{RESOURCE_LABELS[m.resource_type] || m.resource_type}</td>
                     <td>{m.unit}</td>
                     <td>{m.serial_number}</td>
-                    {(() => {
-                      const health = meterHealth(m);
-                      return (
-                        <td>
-                          <span className={`badge tone-${health.tone}`}>{health.label}</span>
-                        </td>
-                      );
-                    })()}
-                    <td style={{ minWidth: 160 }}>
-                      <div className="mini-chart">
-                        <ResponsiveContainer width="100%" height={60}>
-                          <LineChart data={miniSeries(m)}>
-                            <Tooltip />
-                            <Line type="monotone" dataKey="value" stroke="#67e8f9" strokeWidth={2} dot={false} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </td>
                     <td className="table-actions">
                       <button
                         type="button"
