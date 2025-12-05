@@ -230,7 +230,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
           <div className="page-header" style={{ alignItems: "center" }}>
             <div>
               <h3>Цель по объекту</h3>
-              <p className="subtitle">Порог выполняется только на клиенте, без изменения API.</p>
+              <p className="subtitle">Цель помогает контролировать траты и не влияет на расчёты в системе.</p>
             </div>
             <span className={`badge goal-status ${goalStatus.met ? "met" : "missed"}`}>
               {goalStatus.met ? "Цель достигнута" : "Цель превышена"}

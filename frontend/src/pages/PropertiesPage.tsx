@@ -64,9 +64,9 @@ export function PropertiesPage({ properties, onUpdated, selectedProperty, onSele
     <div className="page">
       <div className="page-header">
         <div>
-          <p className="subtitle">Assets map</p>
+          <p className="subtitle">Карта объектов</p>
           <h1>Объекты и приборы в одном дереве</h1>
-          <p className="subtitle">Слева — объекты, справа — разрез приборов по типам.</p>
+          <p className="subtitle">Выберите объект, чтобы сразу увидеть его приборы по типам.</p>
         </div>
         <div className="secondary-nav">
           <button className="active" type="button">
@@ -153,7 +153,7 @@ export function PropertiesPage({ properties, onUpdated, selectedProperty, onSele
 
       <div className="surface">
         <h3>Добавить объект</h3>
-        <p className="subtitle">Инлайновая форма без модалок.</p>
+        <p className="subtitle">Заполните форму, чтобы добавить новый объект.</p>
         <form onSubmit={addProperty} className="form-grid">
           <label htmlFor="name">Название</label>
           <input id="name" placeholder="Например, ЖК Солнечный" value={name} onChange={(e) => setName(e.target.value)} required />
