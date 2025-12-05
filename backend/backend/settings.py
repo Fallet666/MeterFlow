@@ -83,11 +83,11 @@ if os.getenv("DB_ENGINE") == "postgres":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("POSTGRES_DB", "meterflow"),
-            "USER": os.getenv("POSTGRES_USER", "meterflow"),
-            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "meterflow"),
-            "HOST": os.getenv("POSTGRES_HOST", "db"),
-            "PORT": os.getenv("POSTGRES_PORT", "55432"),
+            "NAME": os.getenv("POSTGRES_DB", "energo_db"),
+            "USER": os.getenv("POSTGRES_USER", "energo_user"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "energo_pass"),
+            "HOST": os.getenv("POSTGRES_HOST", "energo_db"),
+            "PORT": os.getenv("POSTGRES_PORT", "7002"),
         }
     }
 else:
@@ -100,7 +100,7 @@ else:
 
 # Example PostgreSQL configuration
 # DB_ENGINE=postgres
-# POSTGRES_DB=meterflow
+# POSTGRES_DB=energo_db
 
 
 # Password validation

@@ -1,17 +1,18 @@
 version: '3.9'
 
 services:
-  db:
+  energo_db:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_DB: meterflow
-      POSTGRES_USER: meterflow
-      POSTGRES_PASSWORD: meterflow
+      POSTGRES_DB: energo_db
+      POSTGRES_USER: energo_user
+      POSTGRES_PASSWORD: energo_pass
+    command: ["postgres", "-p", "7002"]
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - energo_postgres_data:/var/lib/postgresql/data
     ports:
-      - "55432:5432"
+      - "7002:7002"
 
   backend:
     build: ./backend
@@ -19,26 +20,27 @@ services:
       - ./backend/.env.example
     environment:
       DB_ENGINE: postgres
-      POSTGRES_DB: meterflow
-      POSTGRES_USER: meterflow
-      POSTGRES_PASSWORD: meterflow
-      POSTGRES_HOST: db
+      POSTGRES_DB: energo_db
+      POSTGRES_USER: energo_user
+      POSTGRES_PASSWORD: energo_pass
+      POSTGRES_HOST: energo_db
+      POSTGRES_PORT: 7002
     volumes:
       - ./backend:/app
     ports:
-      - "8100:8100"
+      - "7001:7001"
     depends_on:
-      - db
+      - energo_db
 
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: http://localhost:8100/api/
+        VITE_API_URL: http://localhost:7001/api/
     ports:
-      - "5174:80"
+      - "7000:80"
     depends_on:
       - backend
 
 volumes:
-  postgres_data:
+  energo_postgres_data:
