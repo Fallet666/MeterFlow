@@ -207,7 +207,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
       </div>
 
       <div className="card">
-        <div className="section-grid" style={{ alignItems: "flex-end" }}>
+        <div className="section-grid" style={{ alignItems: "flex-start" }}>
           <div>
             <p className="subtitle">Объекты</p>
             <div className="property-grid">
