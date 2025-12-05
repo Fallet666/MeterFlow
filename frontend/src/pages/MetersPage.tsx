@@ -134,37 +134,39 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
         </div>
         {selectedProperty ? (
           meters.length ? (
-            <table>
-              <thead>
-                <tr>
-                  <th>Тип ресурса</th>
-                  <th>Ед. изм.</th>
-                  <th>Серийный номер</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {meters.map((m) => (
-                  <tr key={m.id}>
-                    <td>{RESOURCE_LABELS[m.resource_type] || m.resource_type}</td>
-                    <td>{m.unit}</td>
-                    <td>{m.serial_number}</td>
-                    <td className="table-actions">
-                      <button
-                        type="button"
-                        className="link"
-                        onClick={() => updateMeter(m, { is_active: !m.is_active })}
-                      >
-                        {m.is_active ? "Деактивировать" : "Активировать"}
-                      </button>
-                      <button type="button" className="link" onClick={() => removeMeter(m.id)}>
-                        Удалить
-                      </button>
-                    </td>
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Тип ресурса</th>
+                    <th>Ед. изм.</th>
+                    <th>Серийный номер</th>
+                    <th></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {meters.map((m) => (
+                    <tr key={m.id}>
+                      <td>{RESOURCE_LABELS[m.resource_type] || m.resource_type}</td>
+                      <td>{m.unit}</td>
+                      <td>{m.serial_number}</td>
+                      <td className="table-actions">
+                        <button
+                          type="button"
+                          className="link"
+                          onClick={() => updateMeter(m, { is_active: !m.is_active })}
+                        >
+                          {m.is_active ? "Деактивировать" : "Активировать"}
+                        </button>
+                        <button type="button" className="link" onClick={() => removeMeter(m.id)}>
+                          Удалить
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <p className="subtitle">Нет счетчиков для выбранного объекта. Добавьте первый выше.</p>
           )

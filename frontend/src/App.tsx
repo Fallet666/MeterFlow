@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import api, { authApi } from "./api";
 import {
   AnalyticsPage,
@@ -24,6 +32,7 @@ export type Meter = {
 
 function AppShell() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [access, setAccess] = useState<string | null>(localStorage.getItem("access"));
   const [user, setUser] = useState<any>(() => {
     const stored = localStorage.getItem("user");
@@ -34,6 +43,7 @@ function AppShell() {
     const stored = localStorage.getItem("activeProperty");
     return stored ? Number(stored) : null;
   });
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     if (access) {
@@ -64,27 +74,49 @@ function AppShell() {
   };
 
   const authed = useMemo(() => !!access, [access]);
+  const navigation = [
+    { to: "/", label: "Дашборд" },
+    { to: "/properties", label: "Объекты" },
+    { to: "/meters", label: "Счётчики" },
+    { to: "/readings", label: "Показания" },
+    { to: "/analytics", label: "Аналитика" },
+  ];
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div className="logo">MeterFlow</div>
+        <div className="brand">MeterFlow</div>
         {authed && (
-          <nav className="nav-links">
-            <Link to="/">Дашборд</Link>
-            <Link to="/properties">Объекты</Link>
-            <Link to="/meters">Счётчики</Link>
-            <Link to="/readings">Показания</Link>
-            <Link to="/analytics">Аналитика</Link>
-          </nav>
+          <>
+            <button className="icon-button mobile-toggle" onClick={() => setNavOpen((v) => !v)} aria-label="Навигация">
+              <span />
+              <span />
+              <span />
+            </button>
+            <nav className={`nav-links ${navOpen ? "open" : ""}`}>
+              {navigation.map((item) => (
+                <Link key={item.to} to={item.to}>
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </>
         )}
         {authed && (
           <div className="user-menu">
-            <span>{user?.username}</span>
+            <div className="user-chip">
+              <div className="user-avatar">{(user?.username || "").slice(0, 2).toUpperCase()}</div>
+              <span>{user?.username}</span>
+            </div>
             <button onClick={logout}>Выйти</button>
           </div>
         )}
       </header>
+      {navOpen && <div className="nav-overlay" onClick={() => setNavOpen(false)} />}
       <main className="content">
         <div className="page-wrapper">
           <Routes>
@@ -93,84 +125,84 @@ function AppShell() {
               element={<AuthPage onAuthenticated={handleAuth} onRegister={authApi.register} onLogin={authApi.login} />}
             />
             <Route
-            path="/"
-            element={
-              authed ? (
-                <Dashboard
-                  selectedProperty={selectedProperty}
-                  onSelectProperty={(id) => {
-                    setSelectedProperty(id);
-                    localStorage.setItem("activeProperty", String(id));
-                  }}
-                  properties={properties}
-                />
-              ) : (
-                <Navigate to="/auth" />
-              )
-            }
-          />
-          <Route
-            path="/properties"
-            element={
-              authed ? (
-                <PropertiesPage
-                  properties={properties}
-                  onUpdated={setProperties}
-                  selectedProperty={selectedProperty}
-                  onSelect={(id) => {
-                    setSelectedProperty(id);
-                    localStorage.setItem("activeProperty", String(id));
-                  }}
-                />
-              ) : (
-                <Navigate to="/auth" />
-              )
-            }
-          />
-          <Route
-            path="/meters"
-            element={
-              authed ? (
-                <MetersPage
-                  selectedProperty={selectedProperty}
-                  properties={properties}
-                  onSelectProperty={(id) => {
-                    setSelectedProperty(id);
-                    localStorage.setItem("activeProperty", String(id));
-                  }}
-                />
-              ) : (
-                <Navigate to="/auth" />
-              )
-            }
-          />
-          <Route
-            path="/readings"
-            element={
-              authed ? (
-                <ReadingsPage
-                  selectedProperty={selectedProperty}
-                  properties={properties}
-                  onSelectProperty={(id) => {
-                    setSelectedProperty(id);
-                    localStorage.setItem("activeProperty", String(id));
-                  }}
-                />
-              ) : (
-                <Navigate to="/auth" />
-              )
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              authed ? (
-                <AnalyticsPage selectedProperty={selectedProperty} properties={properties} />
-              ) : (
-                <Navigate to="/auth" />
-              )
-            }
-          />
+              path="/"
+              element={
+                authed ? (
+                  <Dashboard
+                    selectedProperty={selectedProperty}
+                    onSelectProperty={(id) => {
+                      setSelectedProperty(id);
+                      localStorage.setItem("activeProperty", String(id));
+                    }}
+                    properties={properties}
+                  />
+                ) : (
+                  <Navigate to="/auth" />
+                )
+              }
+            />
+            <Route
+              path="/properties"
+              element={
+                authed ? (
+                  <PropertiesPage
+                    properties={properties}
+                    onUpdated={setProperties}
+                    selectedProperty={selectedProperty}
+                    onSelect={(id) => {
+                      setSelectedProperty(id);
+                      localStorage.setItem("activeProperty", String(id));
+                    }}
+                  />
+                ) : (
+                  <Navigate to="/auth" />
+                )
+              }
+            />
+            <Route
+              path="/meters"
+              element={
+                authed ? (
+                  <MetersPage
+                    selectedProperty={selectedProperty}
+                    properties={properties}
+                    onSelectProperty={(id) => {
+                      setSelectedProperty(id);
+                      localStorage.setItem("activeProperty", String(id));
+                    }}
+                  />
+                ) : (
+                  <Navigate to="/auth" />
+                )
+              }
+            />
+            <Route
+              path="/readings"
+              element={
+                authed ? (
+                  <ReadingsPage
+                    selectedProperty={selectedProperty}
+                    properties={properties}
+                    onSelectProperty={(id) => {
+                      setSelectedProperty(id);
+                      localStorage.setItem("activeProperty", String(id));
+                    }}
+                  />
+                ) : (
+                  <Navigate to="/auth" />
+                )
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                authed ? (
+                  <AnalyticsPage selectedProperty={selectedProperty} properties={properties} />
+                ) : (
+                  <Navigate to="/auth" />
+                )
+              }
+            />
           </Routes>
         </div>
       </main>

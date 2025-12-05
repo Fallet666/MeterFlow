@@ -183,32 +183,34 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
         </div>
         {selectedProperty ? (
           items.length ? (
-            <table>
-              <thead>
-                <tr>
-                  <th>Счётчик</th>
-                  <th>Значение</th>
-                  <th>Начисление</th>
-                  <th>Дата</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((r) => {
-                  const unit = r.unit || r.meter_detail?.unit;
-                  return (
-                    <tr key={r.id}>
-                      <td>
-                        {RESOURCE_LABELS[r.meter_detail?.resource_type || ""] || r.meter_detail?.resource_type || "Счётчик"}
-                        <div className="subtitle">{r.meter_detail?.serial_number || r.meter}</div>
-                      </td>
-                      <td>{`${r.value} ${unit || ""}`.trim()}</td>
-                      <td>{r.amount_value ? `${Number(r.amount_value).toFixed(2)} ₽` : "—"}</td>
-                      <td>{r.reading_date}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Счётчик</th>
+                    <th>Значение</th>
+                    <th>Начисление</th>
+                    <th>Дата</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((r) => {
+                    const unit = r.unit || r.meter_detail?.unit;
+                    return (
+                      <tr key={r.id}>
+                        <td>
+                          {RESOURCE_LABELS[r.meter_detail?.resource_type || ""] || r.meter_detail?.resource_type || "Счётчик"}
+                          <div className="subtitle">{r.meter_detail?.serial_number || r.meter}</div>
+                        </td>
+                        <td>{`${r.value} ${unit || ""}`.trim()}</td>
+                        <td>{r.amount_value ? `${Number(r.amount_value).toFixed(2)} ₽` : "—"}</td>
+                        <td>{r.reading_date}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <p className="subtitle">
               Нет показаний для выбранного {selectedMeter ? "счётчика" : "объекта"}.

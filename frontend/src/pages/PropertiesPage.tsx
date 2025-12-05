@@ -49,26 +49,28 @@ export function PropertiesPage({ properties, onUpdated, selectedProperty, onSele
           <h3>Список объектов</h3>
           <p className="subtitle">Выберите активный объект для работы.</p>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Название</th>
-              <th>Адрес</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {properties.map((p) => (
-              <tr key={p.id} className={selectedProperty === p.id ? "active" : ""}>
-                <td>{p.name}</td>
-                <td>{p.address}</td>
-                <td>
-                  <button onClick={() => onSelect(p.id)}>Использовать</button>
-                </td>
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Название</th>
+                <th>Адрес</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {properties.map((p) => (
+                <tr key={p.id} className={selectedProperty === p.id ? "active" : ""}>
+                  <td>{p.name}</td>
+                  <td>{p.address}</td>
+                  <td>
+                    <button onClick={() => onSelect(p.id)}>Использовать</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
