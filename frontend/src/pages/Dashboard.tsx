@@ -242,26 +242,28 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
           <h3>Последние показания</h3>
           <p className="subtitle">Пять последних записей по выбранному объекту.</p>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Счётчик</th>
-              <th>Значение</th>
-              <th>Начисление</th>
-              <th>Дата</th>
-            </tr>
-          </thead>
-          <tbody>
-            {readings.map((r) => (
-              <tr key={r.id}>
-                <td>{getMeterLabel(r)}</td>
-                <td>{getValueWithUnit(r)}</td>
-                <td>{r.amount_value ? `${Number(r.amount_value).toFixed(2)} ₽` : "—"}</td>
-                <td>{r.reading_date}</td>
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Счётчик</th>
+                <th>Значение</th>
+                <th>Начисление</th>
+                <th>Дата</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {readings.map((r) => (
+                <tr key={r.id}>
+                  <td>{getMeterLabel(r)}</td>
+                  <td>{getValueWithUnit(r)}</td>
+                  <td>{r.amount_value ? `${Number(r.amount_value).toFixed(2)} ₽` : "—"}</td>
+                  <td>{r.reading_date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

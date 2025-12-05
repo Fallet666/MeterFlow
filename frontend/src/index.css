@@ -2,8 +2,8 @@
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   font-weight: 400;
-  color: #e5e7eb;
-  background-color: #0b1220;
+  color: var(--text);
+  background-color: var(--bg);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -15,7 +15,7 @@ a {
 }
 
 a:hover {
-  color: #8bb5ff;
+  color: var(--accent);
 }
 
 * {
@@ -25,7 +25,7 @@ a:hover {
 body {
   margin: 0;
   min-height: 100vh;
-  background: #0b1220;
+  background: var(--bg);
 }
 
 #root {
@@ -33,15 +33,16 @@ body {
 }
 
 h1 {
-  margin: 0 0 16px;
-  font-size: 28px;
+  margin: 0 0 12px;
+  font-size: clamp(26px, 2vw, 30px);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 h3 {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   font-size: 18px;
+  letter-spacing: -0.01em;
 }
 
 p {

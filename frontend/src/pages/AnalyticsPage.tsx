@@ -438,28 +438,30 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
               <h3>Сравнение объектов</h3>
               <p className="subtitle">Суммарные начисления и потребление</p>
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Объект</th>
-                  <th>Потребление</th>
-                  <th>Сумма</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.comparison.map((row) => (
-                  <tr key={row.property__id}>
-                    <td>{row.property__name}</td>
-                    <td>
-                      {resourceType
-                        ? `${row.total_consumption.toFixed(2)} ${resourceSummary[0]?.unit || ""}`
-                        : "—"}
-                    </td>
-                    <td>{row.total_amount.toFixed(2)} ₽</td>
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Объект</th>
+                    <th>Потребление</th>
+                    <th>Сумма</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.comparison.map((row) => (
+                    <tr key={row.property__id}>
+                      <td>{row.property__name}</td>
+                      <td>
+                        {resourceType
+                          ? `${row.total_consumption.toFixed(2)} ${resourceSummary[0]?.unit || ""}`
+                          : "—"}
+                      </td>
+                      <td>{row.total_amount.toFixed(2)} ₽</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
       )}
