@@ -94,7 +94,7 @@ function AppShell() {
         <aside className="sidebar">
           <div className="brand-block">
             <div className="brand-mark" aria-hidden>
-              EB
+              <img src="/logo.svg"></img>
             </div>
             <div>
               <div className="brand-name">EnergoBoard</div>
