@@ -179,7 +179,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
       <div className="page-header">
         <div>
           <p className="subtitle">EnergoBoard · Workspace</p>
-          <h1>Рабочий борт с сигналами и целями</h1>
+          <h1>Рабочий дашборд</h1>
           <p className="subtitle">Собирает прогнозы, инсайты, цели и закрепленные панели в одном месте.</p>
         </div>
         <div className="secondary-nav" aria-label="Навигация рабочего места">

@@ -69,7 +69,7 @@ function AppShell() {
     {
       label: "Рабочее место",
       items: [
-        { to: "/", label: "Мой борт" },
+        { to: "/", label: "Дашборд" },
         { to: "/analytics", label: "Исследователь" },
       ],
     },
