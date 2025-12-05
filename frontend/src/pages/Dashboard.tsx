@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import api from "../api";
 import { Property } from "../App";
@@ -22,7 +22,7 @@ interface ForecastResponse {
 }
 
 interface AnalyticsResponse {
-  monthly: { month: string; total_amount: number }[];
+  monthly: { month: string; total_amount: number; total_consumption: number }[];
   summary: { total_amount: number };
   monthly_by_resource?: { month: string; resource_type: string; consumption: number; amount: number }[];
 }
@@ -35,14 +35,26 @@ type FavoriteChartConfig = {
   rangePreset: "year" | "half" | "two";
 };
 
+type GoalConfig = {
+  threshold: number;
+  metric: "amount" | "consumption";
+};
+
 const FAVORITES_KEY = "mf_favorite_charts";
+const GOALS_KEY = "eb_goals";
+
 const RANGE_LABELS: Record<FavoriteChartConfig["rangePreset"], string> = {
   year: "Год",
   half: "6 месяцев",
   two: "2 года",
 };
 
-const getMonthKey = (dateObj: Date) => `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
+const formatMonth = (m: string) => {
+  const [year, month] = m.split("-");
+  return `${month}.${year.slice(-2)}`;
+};
+
+const monthKey = (dateObj: Date) => `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
 
 export function Dashboard({ selectedProperty, properties, onSelectProperty }: Props) {
   const [forecast, setForecast] = useState<number>(0);
@@ -50,6 +62,10 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
   const [charges, setCharges] = useState<AnalyticsResponse | null>(null);
   const [favoriteCharts, setFavoriteCharts] = useState<FavoriteChartConfig[]>([]);
   const [favoritesData, setFavoritesData] = useState<Record<string, AnalyticsResponse>>({});
+  const [goals, setGoals] = useState<Record<number, GoalConfig>>(() => {
+    const saved = localStorage.getItem(GOALS_KEY);
+    return saved ? JSON.parse(saved) : {};
+  });
 
   useEffect(() => {
     if (!selectedProperty && properties.length > 0) {
@@ -62,10 +78,12 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
       api
         .get<ForecastResponse>("analytics/forecast/", { params: { property: selectedProperty } })
         .then(({ data }) => setForecast(Number(data.forecast_amount) || 0));
+
       api
         .get("readings/", { params: { meter__property: selectedProperty } })
-        .then(({ data }) => setReadings(data.slice(0, 5)));
-      const startDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
+        .then(({ data }) => setReadings(data));
+
+      const startDate = new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1);
       api
         .get<AnalyticsResponse>("analytics/", {
           params: {
@@ -92,7 +110,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
   }, []);
 
   useEffect(() => {
-    favoriteCharts.forEach((favorite) => {
+    favoriteCharts.slice(0, 4).forEach((favorite) => {
       api
         .get<AnalyticsResponse>("analytics/", {
           params: {
@@ -112,26 +130,11 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
   }, [favoriteCharts]);
 
   const today = new Date();
-  const currentMonthKey = getMonthKey(today);
-  const previousMonthKey = getMonthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+  const currentMonthKey = monthKey(today);
+  const previousMonthKey = monthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1));
 
-  const currentMonthAmount =
-    charges?.monthly.find((m) => m.month === currentMonthKey)?.total_amount ?? 0;
-  const previousMonthAmount =
-    charges?.monthly.find((m) => m.month === previousMonthKey)?.total_amount ?? 0;
-
-  const getMeterLabel = (reading: any) => {
-    const meter = reading.meter_detail || {};
-    const label = RESOURCE_LABELS[meter.resource_type] || meter.resource_type || "Счётчик";
-    const serial = meter.serial_number || meter.id || reading.meter;
-    const unit = meter.unit ? ` ${meter.unit}` : "";
-    return `${label} – ${serial}${unit ? ` ${unit}` : ""}`;
-  };
-
-  const getValueWithUnit = (reading: any) => {
-    const unit = reading.unit || reading.meter_detail?.unit;
-    return `${reading.value} ${unit || ""}`.trim();
-  };
+  const currentMonthAmount = charges?.monthly.find((m) => m.month === currentMonthKey)?.total_amount ?? 0;
+  const previousMonthAmount = charges?.monthly.find((m) => m.month === previousMonthKey)?.total_amount ?? 0;
 
   const getPeriodFromPreset = (preset: FavoriteChartConfig["rangePreset"]) => {
     const monthsMap: Record<FavoriteChartConfig["rangePreset"], number> = {
@@ -149,19 +152,50 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
     };
   };
 
+  const insights = useMemo(() => buildInsights(charges, readings), [charges, readings]);
+
+  const goalForProperty = selectedProperty ? goals[selectedProperty] : undefined;
+  const goalStatus = useMemo(() => {
+    if (!goalForProperty || !charges) return null;
+    const metricValue =
+      goalForProperty.metric === "amount"
+        ? currentMonthAmount
+        : charges.monthly.reduce((sum, m) => sum + m.total_consumption, 0) / (charges.monthly.length || 1);
+    const met = metricValue <= goalForProperty.threshold;
+    return { met, value: metricValue };
+  }, [goalForProperty, currentMonthAmount, charges]);
+
+  const updateGoal = (threshold: number, metric: GoalConfig["metric"]) => {
+    if (!selectedProperty) return;
+    const next = { ...goals, [selectedProperty]: { threshold, metric } };
+    setGoals(next);
+    localStorage.setItem(GOALS_KEY, JSON.stringify(next));
+  };
+
+  const lastReadings = readings.slice(0, 6);
+
   return (
     <div className="page">
       <div className="page-header">
         <div>
-          <h1>EnergoBoard · Обзор</h1>
-          <p className="subtitle">Светлый рабочий стол с прогнозом, начислениями и последними показаниями.</p>
+          <p className="subtitle">EnergoBoard · Workspace</p>
+          <h1>Рабочий борт с сигналами и целями</h1>
+          <p className="subtitle">Собирает прогнозы, инсайты, цели и закрепленные панели в одном месте.</p>
+        </div>
+        <div className="secondary-nav" aria-label="Навигация рабочего места">
+          <button className="active" type="button">
+            Главная
+          </button>
+          <button type="button" onClick={() => onSelectProperty(selectedProperty || properties[0]?.id)}>
+            Обновить контекст
+          </button>
         </div>
       </div>
 
-      <div className="card">
-        <div className="section-grid">
+      <div className="surface">
+        <div className="section-grid" style={{ alignItems: "center" }}>
           <div>
-            <p className="subtitle">Текущий объект</p>
+            <p className="subtitle">Выбор объекта</p>
             <select value={selectedProperty || ""} onChange={(e) => onSelectProperty(Number(e.target.value))}>
               <option value="" disabled>
                 Выберите объект
@@ -172,55 +206,98 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
                 </option>
               ))}
             </select>
-            <p className="subtitle" style={{ marginTop: 8 }}>Переключайтесь между объектами, чтобы увидеть прогнозы и историю.</p>
+            <div className="tag-row" style={{ marginTop: 10 }}>
+              <span className="tag">Лента показаний</span>
+              <span className="tag">Цели и сигналы</span>
+              <span className="tag">Закрепленные панели</span>
+            </div>
           </div>
           <div className="info-tile highlight-panel">
             <p className="subtitle">Прогноз на месяц</p>
             <div className="stat-value">{forecast.toFixed(2)} ₽</div>
-            <span className="badge">Обновляется автоматически</span>
+            <span className="badge">На базе последних месяцев</span>
+          </div>
+          <div className="info-tile">
+            <p className="subtitle">Изменение к прошлому месяцу</p>
+            <div className="stat-value">{(currentMonthAmount - previousMonthAmount).toFixed(2)} ₽</div>
+            <p className="subtitle">{formatMonth(currentMonthKey)} vs {formatMonth(previousMonthKey)}</p>
           </div>
         </div>
       </div>
 
-      {charges && (
-        <div className="hero-grid">
-          <div className="info-tile">
-            <p className="subtitle">Фактические начисления</p>
-            <div className="stat-value">{currentMonthAmount.toFixed(2)} ₽</div>
-            <p className="subtitle">За {currentMonthKey}</p>
+      {goalForProperty && goalStatus && (
+        <div className="surface soft">
+          <div className="page-header" style={{ alignItems: "center" }}>
+            <div>
+              <h3>Цель по объекту</h3>
+              <p className="subtitle">Порог выполняется только на клиенте, без изменения API.</p>
+            </div>
+            <span className={`badge goal-status ${goalStatus.met ? "met" : "missed"}`}>
+              {goalStatus.met ? "Цель достигнута" : "Цель превышена"}
+            </span>
           </div>
-          <div className="info-tile">
-            <p className="subtitle">Оценка до конца месяца</p>
-            <div className="stat-value">{forecast.toFixed(2)} ₽</div>
-            <p className="subtitle">На основе прошлых месяцев</p>
-          </div>
-          <div className="info-tile">
-            <p className="subtitle">Разница с прошлым месяцем</p>
-            <div className="stat-value">{(currentMonthAmount - previousMonthAmount).toFixed(2)} ₽</div>
-            <p className="subtitle">Сравнение {currentMonthKey} и {previousMonthKey}</p>
-          </div>
+          <p className="subtitle">
+            Текущее значение: {goalForProperty.metric === "amount" ? `${goalStatus.value.toFixed(2)} ₽` : `${goalStatus.value.toFixed(2)}`}
+          </p>
         </div>
       )}
 
-      {favoriteCharts.length > 0 && (
-        <div className="card">
+      <div className="grid-2col">
+        <div className="surface">
+          <div className="page-header" style={{ alignItems: "center" }}>
+            <h3>Инсайты</h3>
+            <p className="subtitle">Сдвиги, всплески и тишина по приборам.</p>
+          </div>
+          <div className="insight-grid">
+            {insights.map((insight) => (
+              <div key={insight.title} className="insight-card">
+                <p className="subtitle">{insight.type}</p>
+                <strong>{insight.title}</strong>
+                <p className="subtitle">{insight.detail}</p>
+              </div>
+            ))}
+            {insights.length === 0 && <p className="subtitle">Данных пока недостаточно.</p>}
+          </div>
+        </div>
+
+        <div className="surface">
           <div className="page-header" style={{ alignItems: "center" }}>
             <div>
-              <h3>Избранные мини-графики</h3>
-              <p className="subtitle">Подборки из раздела «Аналитика», доступные прямо с дашборда.</p>
+              <h3>Цель по объекту</h3>
+              <p className="subtitle">Простой таргет: лимит суммы или среднего потребления.</p>
+            </div>
+          </div>
+          <GoalEditor
+            goal={goalForProperty}
+            onSave={(threshold, metric) => updateGoal(threshold, metric)}
+            disabled={!selectedProperty}
+          />
+        </div>
+      </div>
+
+      {favoriteCharts.length > 0 && (
+        <div className="surface">
+          <div className="page-header" style={{ alignItems: "center" }}>
+            <div>
+              <h3>Закрепленные панели</h3>
+              <p className="subtitle">Избранные конфигурации из исследователя, доступные на борту.</p>
             </div>
           </div>
           <div className="favorite-grid">
-            {favoriteCharts.slice(0, 3).map((fav) => {
+            {favoriteCharts.slice(0, 4).map((fav) => {
               const favData = favoritesData[fav.id];
               return (
                 <div className="favorite-chart" key={fav.id}>
-                  <strong>{fav.name}</strong>
-                  <p className="subtitle">
-                    {RANGE_LABELS[fav.rangePreset]} · {RESOURCE_LABELS[fav.resourceType] || (fav.resourceType ? fav.resourceType : "все ресурсы")}
-                  </p>
+                  <div className="favorite-chart-header">
+                    <div>
+                      <strong>{fav.name}</strong>
+                      <p className="subtitle">
+                        {RANGE_LABELS[fav.rangePreset]} · {RESOURCE_LABELS[fav.resourceType] || (fav.resourceType ? fav.resourceType : "все ресурсы")}
+                      </p>
+                    </div>
+                  </div>
                   {favData ? (
-                    <ResponsiveContainer width="100%" height={140}>
+                    <ResponsiveContainer width="100%" height={120}>
                       <LineChart data={favData.monthly}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" hide />
@@ -239,34 +316,135 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
         </div>
       )}
 
-      <div className="card">
+      <div className="surface">
         <div className="page-header" style={{ alignItems: "center" }}>
           <div>
-            <h3>Последние показания</h3>
-            <p className="subtitle">Пять последних записей по выбранному объекту.</p>
+            <h3>Свежие показания</h3>
+            <p className="subtitle">Последние записи с пометками по ресурсам.</p>
+          </div>
+          <div className="chip-row">
+            <span className="chip">Лента</span>
+            <span className="chip">События</span>
           </div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Счётчик</th>
-              <th>Значение</th>
-              <th>Начисление</th>
-              <th>Дата</th>
-            </tr>
-          </thead>
-          <tbody>
-            {readings.map((r) => (
-              <tr key={r.id}>
-                <td>{getMeterLabel(r)}</td>
-                <td>{getValueWithUnit(r)}</td>
-                <td>{r.amount_value ? `${Number(r.amount_value).toFixed(2)} ₽` : "—"}</td>
-                <td>{r.reading_date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="timeline">
+          {lastReadings.map((r) => {
+            const meter = r.meter_detail || {};
+            return (
+              <div key={r.id} className="timeline-item">
+                <div>
+                  <strong>{r.reading_date}</strong>
+                  <p className="subtitle">{RESOURCE_LABELS[meter.resource_type] || meter.resource_type || "Счетчик"}</p>
+                </div>
+                <div>
+                  <div className="inline" style={{ justifyContent: "space-between" }}>
+                    <span>{`${r.value} ${meter.unit || ""}`}</span>
+                    <span className="badge">{meter.serial_number || meter.id}</span>
+                  </div>
+                  <p className="subtitle">{r.amount_value ? `${Number(r.amount_value).toFixed(2)} ₽` : "—"}</p>
+                </div>
+              </div>
+            );
+          })}
+          {lastReadings.length === 0 && <p className="subtitle">Нет показаний по выбранному объекту.</p>}
+        </div>
       </div>
     </div>
   );
+}
+
+function GoalEditor({
+  goal,
+  onSave,
+  disabled,
+}: {
+  goal?: GoalConfig;
+  onSave: (threshold: number, metric: GoalConfig["metric"]) => void;
+  disabled: boolean;
+}) {
+  const [threshold, setThreshold] = useState(goal?.threshold || 300);
+  const [metric, setMetric] = useState<GoalConfig["metric"]>(goal?.metric || "amount");
+
+  useEffect(() => {
+    if (goal) {
+      setThreshold(goal.threshold);
+      setMetric(goal.metric);
+    }
+  }, [goal]);
+
+  return (
+    <div className="goal-card">
+      <div className="form-grid">
+        <label>Метрика</label>
+        <select value={metric} onChange={(e) => setMetric(e.target.value as GoalConfig["metric"])} disabled={disabled}>
+          <option value="amount">Сумма за месяц (₽)</option>
+          <option value="consumption">Среднее потребление</option>
+        </select>
+        <label>Порог</label>
+        <input
+          type="number"
+          min="0"
+          step="0.1"
+          value={threshold}
+          onChange={(e) => setThreshold(Number(e.target.value))}
+          disabled={disabled}
+        />
+        <div></div>
+        <button type="button" onClick={() => onSave(threshold, metric)} disabled={disabled}>
+          Сохранить цель
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function buildInsights(charges: AnalyticsResponse | null, readings: any[]) {
+  const list: { title: string; detail: string; type: string }[] = [];
+  if (charges?.monthly?.length) {
+    const sorted = [...charges.monthly].sort((a, b) => (a.month > b.month ? 1 : -1));
+    sorted.forEach((m, idx) => {
+      if (idx === 0) return;
+      const prev = sorted[idx - 1];
+      const delta = m.total_amount - prev.total_amount;
+      const percent = prev.total_amount ? (delta / prev.total_amount) * 100 : 0;
+      if (percent > 18) {
+        list.push({
+          type: "Скачок",
+          title: `${formatMonth(m.month)}: +${percent.toFixed(1)}% к предыдущему месяцу`,
+          detail: `Сумма ${m.total_amount.toFixed(2)} ₽ против ${prev.total_amount.toFixed(2)} ₽`,
+        });
+      }
+    });
+
+    const average =
+      sorted.reduce((sum, m) => sum + m.total_amount, 0) / (sorted.length || 1);
+    const maxMonth = sorted.reduce((acc, cur) => (cur.total_amount > acc.total_amount ? cur : acc), sorted[0]);
+    if (maxMonth.total_amount > average * 1.35) {
+      list.push({
+        type: "Аномалия",
+        title: `${formatMonth(maxMonth.month)} выше среднего`,
+        detail: `Среднее ${average.toFixed(2)} ₽, всплеск до ${maxMonth.total_amount.toFixed(2)} ₽`,
+      });
+    }
+  }
+
+  if (readings.length) {
+    const lastByMeter: Record<string, string> = {};
+    readings.forEach((r) => {
+      const meterId = r.meter_detail?.id || r.meter;
+      if (!lastByMeter[meterId]) lastByMeter[meterId] = r.reading_date;
+    });
+    Object.entries(lastByMeter).forEach(([meterId, dateStr]) => {
+      const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+      if (days > 45) {
+        list.push({
+          type: "Тишина",
+          title: `Нет данных по счётчику ${meterId}`,
+          detail: `Последняя запись ${dateStr}, прошло ${days} дней`,
+        });
+      }
+    });
+  }
+
+  return list.slice(0, 6);
 }
