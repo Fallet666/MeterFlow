@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   BrowserRouter,
-  Link,
   Navigate,
+  NavLink,
   Route,
   Routes,
   useLocation,
@@ -99,9 +99,18 @@ function AppShell() {
             </button>
             <nav className={`nav-links ${navOpen ? "open" : ""}`}>
               {navigation.map((item) => (
-                <Link key={item.to} to={item.to}>
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    isActive || location.pathname.startsWith(`${item.to}/`)
+                      ? "active"
+                      : undefined
+                  }
+                  end={item.to === "/"}
+                >
                   {item.label}
-                </Link>
+                </NavLink>
               ))}
             </nav>
           </>
@@ -149,6 +158,7 @@ function AppShell() {
                     properties={properties}
                     onUpdated={setProperties}
                     selectedProperty={selectedProperty}
+                    user={user}
                     onSelect={(id) => {
                       setSelectedProperty(id);
                       localStorage.setItem("activeProperty", String(id));
