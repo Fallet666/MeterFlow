@@ -17,7 +17,7 @@
    source .venv/bin/activate
    pip install -r requirements.txt
    python manage.py migrate
-   python manage.py runserver 0.0.0.0:8000
+   python manage.py runserver 0.0.0.0:8100
    ```
    По умолчанию используется SQLite. Для PostgreSQL задайте переменные окружения:
    ```bash
@@ -26,23 +26,23 @@
    export POSTGRES_USER=meterflow
    export POSTGRES_PASSWORD=meterflow
    export POSTGRES_HOST=localhost
-   export POSTGRES_PORT=5432
+   export POSTGRES_PORT=55432
    ```
 2. **Frontend**
    ```bash
    cd frontend
    npm install
-   npm run dev -- --host --port 5173
+   npm run dev -- --host --port 5174
    ```
-   По умолчанию фронтенд ожидает API по адресу `http://localhost:8000/api/`. При необходимости задайте `VITE_API_URL`.
+   По умолчанию фронтенд ожидает API по адресу `http://localhost:8100/api/`. При необходимости задайте `VITE_API_URL`.
 
 ## Запуск через Docker Compose
 ```bash
 docker-compose up --build
 ```
-- Backend: http://localhost:8000
-- Frontend: http://localhost:5173
-- PostgreSQL: порт 5432, учётные данные в `docker-compose.yml` или `backend/.env.example`.
+- Backend: http://localhost:8100
+- Frontend: http://localhost:5174
+- PostgreSQL: порт 55432 на хосте (5432 внутри контейнера), учётные данные в `docker-compose.yml` или `backend/.env.example`.
 
 ## Основные эндпоинты
 - `POST /api/auth/register/` — регистрация пользователя с мгновенной выдачей токенов.
