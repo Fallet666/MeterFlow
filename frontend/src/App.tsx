@@ -65,12 +65,27 @@ function AppShell() {
 
   const authed = useMemo(() => !!access, [access]);
 
-  const navItems = [
-    { to: "/", label: "Дашборд" },
-    { to: "/properties", label: "Объекты" },
-    { to: "/meters", label: "Счётчики" },
-    { to: "/readings", label: "Показания" },
-    { to: "/analytics", label: "Аналитика" },
+  const navSections = [
+    {
+      label: "Рабочее место",
+      items: [
+        { to: "/", label: "Мой борт" },
+        { to: "/analytics", label: "Исследователь" },
+      ],
+    },
+    {
+      label: "Активы",
+      items: [
+        { to: "/properties", label: "Объекты" },
+        { to: "/meters", label: "Приборы" },
+      ],
+    },
+    {
+      label: "Потоки данных",
+      items: [
+        { to: "/readings", label: "Лента показаний" },
+      ],
+    },
   ];
 
   return (
@@ -83,30 +98,48 @@ function AppShell() {
             </div>
             <div>
               <div className="brand-name">EnergoBoard</div>
-              <div className="brand-tagline">Контроль энергии</div>
+              <div className="brand-tagline">Workspace · светлая аналитика</div>
             </div>
           </div>
-          <nav className="nav-links">
-            {navItems.map((item) => (
-              <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? "active" : "")}> 
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="sidebar-note">Управляйте объектами, счётчиками и аналитикой в одном месте.</div>
+
+          <div className="sidebar-section">
+            <p className="section-title">Сессия</p>
+            <div className="active-context">
+              <div>
+                <p className="subtitle">Активный пользователь</p>
+                <strong>{user?.username}</strong>
+              </div>
+              <button className="ghost" onClick={logout}>
+                Выйти
+              </button>
+            </div>
+          </div>
+
+          {navSections.map((section) => (
+            <div key={section.label} className="sidebar-section">
+              <p className="section-title">{section.label}</p>
+              <nav className="nav-links">
+                {section.items.map((item) => (
+                  <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? "active" : "")}
+                    >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          ))}
+          <div className="sidebar-note">Рабочее место для энергии: объекты, приборы, лента показаний и гибкий исследователь.</div>
         </aside>
       )}
       <div className="main-area">
         <header className="app-header">
-          <div className="logo-slot" aria-hidden>
-            Логотип
+          <div className="workspace-switcher" aria-hidden>
+            <span className="dot" />
+            EnergoBoard Studio
           </div>
           {authed && (
             <div className="user-menu">
-              <div className="user-name">{user?.username}</div>
-              <button className="ghost" onClick={logout}>
-                Выйти
-              </button>
+              <span className="pill muted">Свежие данные · API</span>
             </div>
           )}
         </header>

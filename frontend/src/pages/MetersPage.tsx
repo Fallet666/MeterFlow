@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import api from "../api";
 import { Meter, Property } from "../App";
 
@@ -68,19 +68,37 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
     setFeedback("Сохранено");
   };
 
+  const grouped = useMemo(() => {
+    const bucket: Record<string, Meter[]> = {};
+    meters.forEach((m) => {
+      if (!bucket[m.resource_type]) bucket[m.resource_type] = [];
+      bucket[m.resource_type].push(m);
+    });
+    return bucket;
+  }, [meters]);
+
   return (
     <div className="page">
       <div className="page-header">
         <div>
-          <h1>Счётчики</h1>
-          <p className="subtitle">Добавьте приборы учета для выбранного объекта.</p>
+          <p className="subtitle">Meters lab</p>
+          <h1>Управление приборами</h1>
+          <p className="subtitle">Пошаговое добавление и живой список по объекту.</p>
+        </div>
+        <div className="secondary-nav">
+          <button className="active" type="button">
+            Приборы
+          </button>
+          <button type="button" onClick={() => selectedProperty && onSelectProperty(selectedProperty)}>
+            Обновить
+          </button>
         </div>
       </div>
 
-      <div className="card">
+      <div className="surface">
         <div className="section-grid">
           <div>
-            <p className="subtitle">Объект</p>
+            <p className="subtitle">Шаг 1 · Выберите объект</p>
             <select value={selectedProperty || ""} onChange={(e) => onSelectProperty(Number(e.target.value))}>
               <option value="" disabled>
                 Выберите объект
@@ -92,86 +110,91 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
               ))}
             </select>
           </div>
-          <div className="highlight-panel info-tile">
-            <p className="subtitle">Совет</p>
-            <p>Выберите объект и добавьте счетчики, чтобы фиксировать показания и начисления.</p>
+          <div className="info-tile highlight-panel">
+            <p className="subtitle">Шаг 2 · Добавьте прибор</p>
+            <p>Мы оставили форму справа, таблицы заменили на компактный стек.</p>
           </div>
         </div>
       </div>
 
-      {!selectedProperty && <div className="card">Сначала выберите или создайте объект недвижимости.</div>}
-
       {selectedProperty && (
-        <form onSubmit={addMeter} className="card">
-          <h3 style={{ marginBottom: 10 }}>Добавить счётчик</h3>
-          <div className="form-grid">
-            <label>Тип ресурса</label>
-            <select value={resourceType} onChange={(e) => setResourceType(e.target.value)}>
-              {Object.entries(RESOURCE_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
+        <div className="grid-2col">
+          <form onSubmit={addMeter} className="surface">
+            <h3 style={{ marginBottom: 10 }}>Добавить счётчик</h3>
+            <div className="form-grid">
+              <label>Тип ресурса</label>
+              <select value={resourceType} onChange={(e) => setResourceType(e.target.value)}>
+                {Object.entries(RESOURCE_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <label>Единицы</label>
+              <input placeholder="кВт·ч, м³..." value={unit} onChange={(e) => setUnit(e.target.value)} />
+              <label>Серийный номер</label>
+              <input placeholder="Укажите серийный номер" value={serial} onChange={(e) => setSerial(e.target.value)} />
+              <div></div>
+              <button type="submit">Сохранить прибор</button>
+            </div>
+            <div className="inline" style={{ justifyContent: "space-between", marginTop: 8 }}>
+              {error && <p className="error">{error}</p>}
+              {feedback && <p className="success">{feedback}</p>}
+            </div>
+          </form>
+
+          <div className="surface">
+            <h3>Сводка по типам</h3>
+            <div className="meter-stack">
+              {Object.entries(grouped).map(([resource, items]) => (
+                <div key={resource} className="meter-card">
+                  <p className="subtitle">{RESOURCE_LABELS[resource] || resource}</p>
+                  <strong>{items.length} шт.</strong>
+                  <div className="chip-row" style={{ marginTop: 8 }}>
+                    {items.map((m) => (
+                      <span key={m.id} className="chip">
+                        {m.serial_number || m.id} · {m.unit}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               ))}
-            </select>
-            <label>Единицы</label>
-            <input placeholder="кВт·ч, м³..." value={unit} onChange={(e) => setUnit(e.target.value)} />
-            <label>Серийный номер</label>
-            <input placeholder="Укажите серийный номер" value={serial} onChange={(e) => setSerial(e.target.value)} />
-            <div></div>
-            <button type="submit">Добавить</button>
+              {meters.length === 0 && <p className="subtitle">Пока нет приборов.</p>}
+            </div>
           </div>
-          <div className="inline" style={{ justifyContent: "space-between", marginTop: 8 }}>
-            {error && <p className="error">{error}</p>}
-            {feedback && <p className="success">{feedback}</p>}
-          </div>
-        </form>
+        </div>
       )}
 
-      <div className="card">
+      <div className="surface">
         <div className="page-header" style={{ alignItems: "center" }}>
           <div>
-            <h3>Список счётчиков</h3>
-            <p className="subtitle">Все приборы учета на выбранном объекте.</p>
+            <h3>Живой список</h3>
+            <p className="subtitle">Комбинация чипов и действий без громоздких таблиц.</p>
           </div>
         </div>
         {selectedProperty ? (
-          meters.length ? (
-            <table>
-              <thead>
-                <tr>
-                  <th>Тип ресурса</th>
-                  <th>Ед. изм.</th>
-                  <th>Серийный номер</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {meters.map((m) => (
-                  <tr key={m.id}>
-                    <td>{RESOURCE_LABELS[m.resource_type] || m.resource_type}</td>
-                    <td>{m.unit}</td>
-                    <td>{m.serial_number}</td>
-                    <td className="table-actions">
-                      <button
-                        type="button"
-                        className="link"
-                        onClick={() => updateMeter(m, { is_active: !m.is_active })}
-                      >
-                        {m.is_active ? "Деактивировать" : "Активировать"}
-                      </button>
-                      <button type="button" className="link" onClick={() => removeMeter(m.id)}>
-                        Удалить
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="subtitle">Нет счетчиков для выбранного объекта. Добавьте первый выше.</p>
-          )
+          <div className="meter-stack">
+            {meters.map((m) => (
+              <div key={m.id} className="meter-card">
+                <div className="inline" style={{ justifyContent: "space-between" }}>
+                  <strong>{RESOURCE_LABELS[m.resource_type] || m.resource_type}</strong>
+                  <span className="badge">{m.serial_number}</span>
+                </div>
+                <p className="subtitle">Ед.: {m.unit}</p>
+                <div className="table-actions">
+                  <button type="button" className="ghost" onClick={() => updateMeter(m, { is_active: !m.is_active })}>
+                    {m.is_active ? "Деактивировать" : "Активировать"}
+                  </button>
+                  <button type="button" className="link" onClick={() => removeMeter(m.id)}>
+                    Удалить
+                  </button>
+                </div>
+              </div>
+            ))}
+            {meters.length === 0 && <p className="subtitle">Нет приборов для выбранного объекта.</p>}
+          </div>
         ) : (
-          <p className="subtitle">Выберите объект, чтобы увидеть связанные счетчики.</p>
+          <p className="subtitle">Выберите объект, чтобы увидеть связанные счётчики.</p>
         )}
       </div>
     </div>
