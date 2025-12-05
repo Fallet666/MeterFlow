@@ -10,6 +10,17 @@ const RESOURCE_LABELS: Record<string, string> = {
   heating: "Отопление",
 };
 
+const parseNumber = (value: any) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
+
+const formatMonthLabel = (month: string) => {
+  const [year, monthPart] = month.split("-");
+  const date = new Date(Number(year), Number(monthPart) - 1, 1);
+  return new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
+};
+
 interface Props {
   selectedProperty: number | null;
   properties: Property[];
@@ -105,15 +116,16 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
     });
     Object.values(groups).forEach((list) => list.sort((a, b) => (a.reading_date > b.reading_date ? -1 : 1)));
     const sortedMonths = Object.keys(groups).sort((a, b) => (a > b ? -1 : 1));
-    return sortedMonths.map((month) => ({ month, records: groups[month] }));
+    return sortedMonths.map((month) => ({ month, label: formatMonthLabel(month), records: groups[month] }));
   }, [filteredItems]);
 
   const summary = useMemo(() => {
     let total = 0;
     let withAmount = 0;
     filteredItems.forEach((r) => {
-      total += r.value;
-      if (r.amount_value) withAmount += r.amount_value;
+      total += parseNumber(r.value);
+      const amountValue = Number(r.amount_value);
+      if (Number.isFinite(amountValue)) withAmount += amountValue;
     });
     return { total, withAmount, count: filteredItems.length };
   }, [filteredItems]);
@@ -123,15 +135,17 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
     const sorted = [...records].sort((a, b) => (a.reading_date > b.reading_date ? 1 : -1));
     const first = sorted[0];
     const last = sorted[sorted.length - 1];
-    const delta = last.value - first.value;
+    const firstValue = parseNumber(first.value);
+    const lastValue = parseNumber(last.value);
+    const delta = lastValue - firstValue;
     const spike = sorted.reduce((acc, cur, idx) => {
       if (idx === 0) return acc;
-      const diff = cur.value - sorted[idx - 1].value;
+      const diff = parseNumber(cur.value) - parseNumber(sorted[idx - 1].value);
       return diff > acc ? diff : acc;
     }, 0);
     return [
-      `Первое значение месяца: ${first.value} ${first.unit || first.meter_detail?.unit || ""}`,
-      `Изменение за месяц: +${delta.toFixed(2)}`,
+      `Первое значение месяца: ${firstValue} ${first.unit || first.meter_detail?.unit || ""}`.trim(),
+      `Изменение за месяц: ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`,
       spike ? `Максимальный шаг: +${spike.toFixed(2)}` : "",
     ].filter(Boolean);
   };
@@ -140,9 +154,9 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
     <div className="page">
       <div className="page-header">
         <div>
-          <p className="subtitle">Timeline</p>
+          <p className="subtitle">История показаний</p>
           <h1>Лента показаний</h1>
-          <p className="subtitle">Вертикальная хроника с фильтрами и событиями.</p>
+          <p className="subtitle">Выберите объект и фильтры, чтобы увидеть актуальные записи.</p>
         </div>
         <div className="secondary-nav">
           <button className="active" type="button">
@@ -271,13 +285,13 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
 
       <div className="surface">
         <div className="page-header" style={{ alignItems: "center" }}>
-          <h3>Вертикальная лента</h3>
-          <p className="subtitle">Группировка по месяцам с подсказками</p>
+          <h3>Хронология показаний</h3>
+          <p className="subtitle">Помесячные группы с подсказками по динамике</p>
         </div>
         <div className="timeline">
           {timeline.map((section) => (
             <div key={section.month} className="timeline-month">
-              <h4>{section.month}</h4>
+              <h4>{section.label}</h4>
               <div className="chip-row" style={{ marginBottom: 8 }}>
                 {monthInsights(section.records).map((msg) => (
                   <span key={msg} className="chip">
@@ -288,6 +302,8 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
               <div className="timeline-list">
                 {section.records.map((r) => {
                   const unit = r.unit || r.meter_detail?.unit;
+                  const numericValue = parseNumber(r.value);
+                  const amountValue = Number(r.amount_value);
                   return (
                     <div key={r.id} className="timeline-item">
                       <div>
@@ -296,10 +312,12 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
                       </div>
                       <div>
                         <div className="inline" style={{ justifyContent: "space-between" }}>
-                          <span>{`${r.value} ${unit || ""}`.trim()}</span>
+                          <span>{`${numericValue.toFixed(3)} ${unit || ""}`.trim()}</span>
                           <span className="badge">{r.meter_detail?.serial_number || r.meter}</span>
                         </div>
-                        <p className="subtitle">{r.amount_value ? `${Number(r.amount_value).toFixed(2)} ₽` : "Начисление не рассчитано"}</p>
+                        <p className="subtitle">
+                          {Number.isFinite(amountValue) ? `${amountValue.toFixed(2)} ₽` : "Начисление не рассчитано"}
+                        </p>
                       </div>
                     </div>
                   );

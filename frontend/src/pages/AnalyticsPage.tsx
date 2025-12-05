@@ -254,7 +254,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
     <div className="page">
       <div className="page-header">
         <div>
-          <p className="subtitle">Analytics Explorer</p>
+          <p className="subtitle">Аналитический конструктор</p>
           <h1>Исследователь: гибкие фильтры и панели</h1>
           <p className="subtitle">Выбирайте метрики, группировки и сохраняйте конфигурации как виджеты.</p>
         </div>
@@ -330,7 +330,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
             <p className="subtitle">Закрепить конфигурацию</p>
             <input placeholder="Название виджета" value={favoriteName} onChange={(e) => setFavoriteName(e.target.value)} />
             <button type="button" onClick={addFavorite} disabled={!selectedIds.length}>
-              Закрепить в борде
+              Сохранить виджет
             </button>
             <p className="subtitle">Сохранит объекты, ресурс, диапазон и выбранные метрики.</p>
           </div>
@@ -351,7 +351,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
                 <div className="surface stat-card">
                   <p className="subtitle">Среднее в день</p>
                   <h2>{averageDailyAmount.toFixed(2)} ₽</h2>
-                  <p className="subtitle">При отсутствии данных — оценка по месяцу</p>
+                  <p className="subtitle">Если данных мало, используем оценку по месяцу</p>
                 </div>
                 <div className="surface stat-card">
                   <p className="subtitle">Прогноз, ₽</p>
@@ -446,24 +446,26 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
                 <div className="surface">
                   <div className="panel-header">
                     <h3>Самые резкие изменения</h3>
-                    <p className="subtitle">Алгоритм на клиенте считает % MoM</p>
+                    <p className="subtitle">Доля изменений месяц к месяцу, %</p>
                   </div>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Месяц</th>
-                        <th>Δ %</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topMovers.map((m) => (
-                        <tr key={m.label}>
-                          <td>{m.label}</td>
-                          <td>{m.change.toFixed(1)}%</td>
+                  <div className="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Месяц</th>
+                          <th>Δ %</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {topMovers.map((m) => (
+                          <tr key={m.label}>
+                            <td>{m.label}</td>
+                            <td>{m.change.toFixed(1)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
@@ -472,35 +474,37 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
                   <h3>Сравнение объектов</h3>
                   <p className="subtitle">Суммарные значения в выбранном периоде</p>
                 </div>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Объект</th>
-                      <th>Потребление</th>
-                      <th>Сумма</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.comparison.map((row) => (
-                      <tr key={row.property__id}>
-                        <td>{row.property__name}</td>
-                        <td>
-                          {metric === "consumption"
-                            ? `${row.total_consumption.toFixed(2)}`
-                            : "—"}
-                        </td>
-                        <td>{row.total_amount.toFixed(2)} ₽</td>
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Объект</th>
+                        <th>Потребление</th>
+                        <th>Сумма</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {data.comparison.map((row) => (
+                        <tr key={row.property__id}>
+                          <td>{row.property__name}</td>
+                          <td>
+                            {metric === "consumption"
+                              ? `${row.total_consumption.toFixed(2)}`
+                              : "—"}
+                          </td>
+                          <td>{row.total_amount.toFixed(2)} ₽</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               {favoriteCharts.length > 0 && (
                 <div className="surface">
                   <div className="panel-header">
-                    <h3>Закрепленные виджеты</h3>
-                    <p className="subtitle">Работают как мини-борды из разных фильтров</p>
+                    <h3>Сохранённые виджеты</h3>
+                    <p className="subtitle">Мини-панели с сохранёнными фильтрами</p>
                   </div>
                   <div className="favorite-grid">
                     {favoriteCharts.map((fav) => {

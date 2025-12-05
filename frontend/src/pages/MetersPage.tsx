@@ -81,9 +81,9 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
     <div className="page">
       <div className="page-header">
         <div>
-          <p className="subtitle">Meters lab</p>
+          <p className="subtitle">Центр приборов</p>
           <h1>Управление приборами</h1>
-          <p className="subtitle">Пошаговое добавление и живой список по объекту.</p>
+          <p className="subtitle">Добавляйте счётчики и следите за активными приборами по объекту.</p>
         </div>
         <div className="secondary-nav">
           <button className="active" type="button">
@@ -112,7 +112,7 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
           </div>
           <div className="info-tile highlight-panel">
             <p className="subtitle">Шаг 2 · Добавьте прибор</p>
-            <p>Мы оставили форму справа, таблицы заменили на компактный стек.</p>
+            <p>Заполните форму, чтобы прибор появился в общем списке и аналитике.</p>
           </div>
         </div>
       </div>
@@ -165,13 +165,13 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
         </div>
       )}
 
-      <div className="surface">
-        <div className="page-header" style={{ alignItems: "center" }}>
-          <div>
-            <h3>Живой список</h3>
-            <p className="subtitle">Комбинация чипов и действий без громоздких таблиц.</p>
+        <div className="surface">
+          <div className="page-header" style={{ alignItems: "center" }}>
+            <div>
+              <h3>Живой список</h3>
+              <p className="subtitle">Быстрое управление приборами без переходов и лишних таблиц.</p>
+            </div>
           </div>
-        </div>
         {selectedProperty ? (
           <div className="meter-stack">
             {meters.map((m) => (
