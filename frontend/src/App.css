@@ -575,6 +575,11 @@ table td {
   height: fit-content;
 }
 
+.analytics-filters > div {
+  display: grid;
+  gap: 6px;
+}
+
 .analytics-panels {
   display: grid;
   gap: 14px;
@@ -597,6 +602,30 @@ table td {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.panel-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--slate-700);
+  font-weight: 600;
+}
+
+.checkbox-inline input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--orange-500);
 }
 
 .tag-row {
