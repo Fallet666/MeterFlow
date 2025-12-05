@@ -65,7 +65,7 @@ export function PropertiesPage({ properties, onUpdated, selectedProperty, onSele
       <div className="page-header">
         <div>
           <p className="subtitle">Карта объектов</p>
-          <h1>Объекты и приборы в одном дереве</h1>
+          <h1>Объекты и приборы в одном окне</h1>
           <p className="subtitle">Выберите объект, чтобы сразу увидеть его приборы по типам.</p>
         </div>
         <div className="secondary-nav">
@@ -73,7 +73,7 @@ export function PropertiesPage({ properties, onUpdated, selectedProperty, onSele
             Объекты
           </button>
           <button type="button" onClick={() => selectedProperty && onSelect(selectedProperty)}>
-            Обновить
+            Синхронизировать
           </button>
         </div>
       </div>
@@ -94,7 +94,7 @@ export function PropertiesPage({ properties, onUpdated, selectedProperty, onSele
                   <p className="subtitle">{p.address}</p>
                   <div className="inline" style={{ justifyContent: "space-between", marginTop: 8 }}>
                     <button type="button" className="ghost" onClick={() => onSelect(p.id)}>
-                      Открыть
+                      Сделать активным
                     </button>
                     <span className="subtitle">ID {p.id}</span>
                   </div>

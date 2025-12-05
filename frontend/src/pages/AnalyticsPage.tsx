@@ -307,8 +307,8 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
       <div className="page-header">
         <div>
           <p className="subtitle">Аналитический конструктор</p>
-          <h1>Исследователь: гибкие фильтры и панели</h1>
-          <p className="subtitle">Выбирайте метрики, группировки и сохраняйте конфигурации как виджеты.</p>
+          <h1>Исследователь EnergoBoard</h1>
+          <p className="subtitle">Настройте период, ресурс, метрику и сохраните любимые конфигурации как виджеты.</p>
         </div>
         {secondaryNav}
       </div>
@@ -384,7 +384,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
             <button type="button" onClick={addFavorite} disabled={!selectedIds.length}>
               Сохранить виджет
             </button>
-            <p className="subtitle">Сохранит объекты, ресурс, диапазон и выбранные метрики.</p>
+            <p className="subtitle">Сохраняет объекты, ресурс, диапазон и выбранные метрики.</p>
           </div>
         </aside>
 

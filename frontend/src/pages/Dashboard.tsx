@@ -178,16 +178,16 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
     <div className="page">
       <div className="page-header">
         <div>
-          <p className="subtitle">EnergoBoard · Workspace</p>
-          <h1>Рабочий дашборд</h1>
-          <p className="subtitle">Собирает прогнозы, инсайты, цели и закрепленные панели в одном месте.</p>
+          <p className="subtitle">Быстрый обзор по объекту</p>
+          <h1>Дашборд энергопотребления</h1>
+          <p className="subtitle">Прогноз, цели, инсайты и закреплённые панели собраны в одном экране.</p>
         </div>
         <div className="secondary-nav" aria-label="Навигация рабочего места">
           <button className="active" type="button">
             Главная
           </button>
           <button type="button" onClick={() => onSelectProperty(selectedProperty || properties[0]?.id)}>
-            Обновить контекст
+            Обновить данные
           </button>
         </div>
       </div>
@@ -195,7 +195,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
       <div className="surface">
         <div className="section-grid" style={{ alignItems: "center" }}>
           <div>
-            <p className="subtitle">Выбор объекта</p>
+            <p className="subtitle">Активный объект</p>
             <select value={selectedProperty || ""} onChange={(e) => onSelectProperty(Number(e.target.value))}>
               <option value="" disabled>
                 Выберите объект
@@ -209,13 +209,13 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
             <div className="tag-row" style={{ marginTop: 10 }}>
               <span className="tag">Лента показаний</span>
               <span className="tag">Цели и сигналы</span>
-              <span className="tag">Закрепленные панели</span>
+              <span className="tag">Панели из исследователя</span>
             </div>
           </div>
           <div className="info-tile highlight-panel">
             <p className="subtitle">Прогноз на месяц</p>
             <div className="stat-value">{forecast.toFixed(2)} ₽</div>
-            <span className="badge">На базе последних месяцев</span>
+            <span className="badge">По истории начислений</span>
           </div>
           <div className="info-tile">
             <p className="subtitle">Изменение к прошлому месяцу</p>
@@ -230,7 +230,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
           <div className="page-header" style={{ alignItems: "center" }}>
             <div>
               <h3>Цель по объекту</h3>
-              <p className="subtitle">Цель помогает контролировать траты и не влияет на расчёты в системе.</p>
+              <p className="subtitle">Контроль расходов без влияния на расчёты.</p>
             </div>
             <span className={`badge goal-status ${goalStatus.met ? "met" : "missed"}`}>
               {goalStatus.met ? "Цель достигнута" : "Цель превышена"}
@@ -279,8 +279,8 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
         <div className="surface">
           <div className="page-header" style={{ alignItems: "center" }}>
             <div>
-              <h3>Закрепленные панели</h3>
-              <p className="subtitle">Избранные конфигурации из исследователя, доступные на борту.</p>
+              <h3>Закреплённые панели</h3>
+              <p className="subtitle">Избранные конфигурации из исследователя всегда под рукой.</p>
             </div>
           </div>
           <div className="favorite-grid">
