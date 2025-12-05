@@ -37,38 +37,48 @@ export function PropertiesPage({ properties, onUpdated, selectedProperty, onSele
       </div>
 
       <form onSubmit={addProperty} className="card">
-        <div className="inline">
-          <input placeholder="Название" value={name} onChange={(e) => setName(e.target.value)} required />
-          <input placeholder="Адрес" value={address} onChange={(e) => setAddress(e.target.value)} required />
-          <button type="submit">Добавить</button>
+        <h3 style={{ marginBottom: 10 }}>Новый объект</h3>
+        <div className="form-grid">
+          <label htmlFor="name">Название</label>
+          <input id="name" placeholder="Например, ЖК Солнечный" value={name} onChange={(e) => setName(e.target.value)} required />
+          <label htmlFor="address">Адрес</label>
+          <input
+            id="address"
+            placeholder="Город, улица, дом"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            required
+          />
+          <div></div>
+          <button type="submit">Добавить объект</button>
         </div>
       </form>
 
       <div className="card">
         <div className="page-header" style={{ alignItems: "center" }}>
-          <h3>Список объектов</h3>
-          <p className="subtitle">Выберите активный объект для работы.</p>
+          <div>
+            <h3>Список объектов</h3>
+            <p className="subtitle">Выберите активный объект для работы.</p>
+          </div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Название</th>
-              <th>Адрес</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {properties.map((p) => (
-              <tr key={p.id} className={selectedProperty === p.id ? "active" : ""}>
-                <td>{p.name}</td>
-                <td>{p.address}</td>
-                <td>
-                  <button onClick={() => onSelect(p.id)}>Использовать</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="property-grid">
+          {properties.map((p) => {
+            const active = selectedProperty === p.id;
+            return (
+              <div key={p.id} className={`property-card ${active ? "active" : ""}`}>
+                <div className="badge" style={{ marginBottom: 8 }}>{active ? "Активный" : "Доступен"}</div>
+                <h3 style={{ marginBottom: 6 }}>{p.name}</h3>
+                <p className="subtitle">{p.address}</p>
+                <div className="inline" style={{ justifyContent: "space-between", marginTop: 12 }}>
+                  <button type="button" className="ghost" onClick={() => onSelect(p.id)}>
+                    Использовать
+                  </button>
+                  <span className="subtitle">ID {p.id}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
