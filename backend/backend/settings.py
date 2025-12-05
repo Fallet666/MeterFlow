@@ -87,7 +87,7 @@ if os.getenv("DB_ENGINE") == "postgres":
             "USER": os.getenv("POSTGRES_USER", "meterflow"),
             "PASSWORD": os.getenv("POSTGRES_PASSWORD", "meterflow"),
             "HOST": os.getenv("POSTGRES_HOST", "db"),
-            "PORT": os.getenv("POSTGRES_PORT", "5432"),
+            "PORT": os.getenv("POSTGRES_PORT", "55432"),
         }
     }
 else:
