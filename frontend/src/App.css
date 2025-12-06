@@ -25,6 +25,11 @@
   font-family: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
 }
 
+.app-shell.auth-mode {
+  grid-template-columns: 1fr;
+  background: var(--bg);
+}
+
 .sidebar {
   background: linear-gradient(180deg, #fffaf4 0%, #ffffff 45%);
   border-right: 1px solid var(--border);
@@ -160,6 +165,10 @@
   min-width: 0;
 }
 
+.auth-mode .main-area {
+  min-height: 100vh;
+}
+
 .app-header {
   height: 76px;
   background: #ffffffea;
@@ -253,12 +262,12 @@
 }
 
 .icon-button {
+  display: none;
   width: 40px;
   height: 40px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: #fff;
-  display: inline-flex;
   flex-direction: column;
   justify-content: center;
   gap: 6px;
@@ -285,12 +294,24 @@
   padding: 28px 32px 38px;
 }
 
+.auth-content {
+  padding: 32px 18px 42px;
+  display: flex;
+  justify-content: center;
+}
+
 .page-wrapper {
   max-width: 1320px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.auth-wrapper {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
 }
 
 .page {
@@ -787,10 +808,13 @@ table thead th {
 .auth-page {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-  align-items: center;
-  padding: 40px 28px;
+  grid-template-columns: minmax(320px, 1.1fr) minmax(320px, 0.9fr);
+  gap: 28px;
+  align-items: stretch;
+  padding: 28px;
+  margin: 0 auto;
+  max-width: 1180px;
+  width: 100%;
   background: radial-gradient(circle at 80% 10%, #ffe9d6, transparent 34%), var(--bg);
 }
 
@@ -802,6 +826,8 @@ table thead th {
   border: 1px solid #ffe1c4;
   box-shadow: var(--shadow-lg);
   overflow: hidden;
+  display: grid;
+  gap: 12px;
 }
 
 .auth-hero::after {
@@ -834,6 +860,9 @@ table thead th {
   box-shadow: var(--shadow-lg);
   display: grid;
   gap: 16px;
+  max-width: 520px;
+  width: 100%;
+  align-self: center;
 }
 
 .auth-meta {
@@ -847,6 +876,22 @@ table thead th {
   display: inline-flex;
   gap: 8px;
   align-items: center;
+}
+
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--muted-strong);
+}
+
+.auth-form .actions {
+  margin-top: 4px;
 }
 
 .actions {
@@ -869,6 +914,11 @@ table thead th {
 @media (max-width: 1024px) {
   .app-shell {
     grid-template-columns: 1fr;
+  }
+
+  .auth-page {
+    grid-template-columns: 1fr;
+    padding: 24px 18px;
   }
 
   .sidebar {
@@ -898,6 +948,10 @@ table thead th {
     padding: 20px 18px 28px;
   }
 
+  .auth-content {
+    padding: 18px 14px 28px;
+  }
+
   .property-rail,
   .grid-2col,
   .analytics-layout {
@@ -921,6 +975,10 @@ table thead th {
   .surface,
   .card {
     padding: 16px;
+  }
+
+  .icon-button {
+    display: inline-flex;
   }
 }
 

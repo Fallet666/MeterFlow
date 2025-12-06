@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import api, { authApi } from "./api";
 import {
   AnalyticsPage,
@@ -23,6 +23,7 @@ export type Meter = {
 };
 
 function AppShell() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [access, setAccess] = useState<string | null>(localStorage.getItem("access"));
   const [user, setUser] = useState<any>(() => {
@@ -89,9 +90,12 @@ function AppShell() {
     },
   ];
 
+  const isAuthRoute = location.pathname.startsWith("/auth");
+  const shellClass = `app-shell${isAuthRoute ? " auth-mode" : ""}`;
+
   return (
-    <div className="app-shell">
-      {authed && (
+    <div className={shellClass}>
+      {authed && !isAuthRoute && (
         <>
           <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
             <div className="brand-block">
@@ -142,40 +146,42 @@ function AppShell() {
         </>
       )}
       <div className="main-area">
-        <header className="app-header">
-          <div className="header-left">
-            {authed && (
-              <button className="icon-button" type="button" onClick={() => setSidebarOpen((v) => !v)} aria-label="Навигация">
-                <span />
-                <span />
-              </button>
-            )}
-            <div className="logo-pill">
-              <div className="logo-mini" aria-hidden>
-                <img src="/logo.svg" alt="Эмблема EnergoBoard" />
-              </div>
-              <div>
-                <div className="brand-name">EnergoBoard</div>
-                <div className="brand-tagline">Светлая аналитика</div>
-              </div>
-            </div>
-            <div className="workspace-switcher" aria-hidden>
-              <span className="dot" />Рабочая среда
-            </div>
-          </div>
-          {authed && (
-            <div className="user-menu">
-              {selectedProperty && (
-                <span className="pill muted">
-                  Объект: {properties.find((p) => p.id === selectedProperty)?.name || "—"}
-                </span>
+        {!isAuthRoute && (
+          <header className="app-header">
+            <div className="header-left">
+              {authed && (
+                <button className="icon-button" type="button" onClick={() => setSidebarOpen((v) => !v)} aria-label="Навигация">
+                  <span />
+                  <span />
+                </button>
               )}
-              <span className="pill">Данные обновлены</span>
+              <div className="logo-pill">
+                <div className="logo-mini" aria-hidden>
+                  <img src="/logo.svg" alt="Эмблема EnergoBoard" />
+                </div>
+                <div>
+                  <div className="brand-name">EnergoBoard</div>
+                  <div className="brand-tagline">Светлая аналитика</div>
+                </div>
+              </div>
+              <div className="workspace-switcher" aria-hidden>
+                <span className="dot" />Рабочая среда
+              </div>
             </div>
-          )}
-        </header>
-        <main className="content">
-          <div className="page-wrapper">
+            {authed && (
+              <div className="user-menu">
+                {selectedProperty && (
+                  <span className="pill muted">
+                    Объект: {properties.find((p) => p.id === selectedProperty)?.name || "—"}
+                  </span>
+                )}
+                <span className="pill">Данные обновлены</span>
+              </div>
+            )}
+          </header>
+        )}
+        <main className={`content ${isAuthRoute ? "auth-content" : ""}`}>
+          <div className={isAuthRoute ? "auth-wrapper" : "page-wrapper"}>
             <Routes>
               <Route
                 path="/auth"

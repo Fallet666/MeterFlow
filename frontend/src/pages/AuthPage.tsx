@@ -56,7 +56,7 @@ export function AuthPage({ onAuthenticated, onRegister, onLogin }: Props) {
             <span className="tag">Защищённый доступ</span>
           </div>
         </div>
-        <form onSubmit={handleSubmit} className="auth-form" style={{ display: "grid", gap: 12 }}>
+        <form onSubmit={handleSubmit} className="auth-form">
           <label>
             Логин
             <input
