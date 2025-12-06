@@ -2,8 +2,12 @@ import "@testing-library/jest-dom/vitest";
 
 const createStorage = () => {
   let store: Record<string, string> = {};
+  const getKeys = () => Object.keys(store);
 
   return {
+    get length() {
+      return getKeys().length;
+    },
     getItem(key: string) {
       return Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null;
     },
@@ -12,6 +16,10 @@ const createStorage = () => {
     },
     removeItem(key: string) {
       delete store[key];
+    },
+    key(index: number) {
+      const keys = getKeys();
+      return keys[index] ?? null;
     },
     clear() {
       store = {};

@@ -53,7 +53,14 @@ services:
       POSTGRES_USER: meterflow
       POSTGRES_PASSWORD: meterflow
       POSTGRES_HOST: db
-    command: ["python", "manage.py", "test"]
+    volumes:
+      - tests-sync:/tests-sync
+    command: >
+      sh -c "pytest &&
+      touch /tests-sync/backend_done &&
+      while [ ! -f /tests-sync/frontend_done ]; do
+        sleep 1;
+      done"
     depends_on:
       - db
 
@@ -66,7 +73,13 @@ services:
       CI: "true"
     volumes:
       - ./frontend:/app
-    command: sh -c "npm ci && npm test"
+      - tests-sync:/tests-sync
+    command: >
+      sh -c "npm ci &&
+      npm test &&
+      touch /tests-sync/frontend_done &&
+      tail -f /dev/null"
 
 volumes:
   postgres_data:
+  tests-sync:
