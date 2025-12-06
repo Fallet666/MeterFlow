@@ -174,3 +174,34 @@ def test_analytics_handles_no_properties_gracefully(user):
     assert response.status_code == 200
     assert response.data["forecast_amount"] == 0
     assert response.data["monthly"] == []
+
+
+@pytest.mark.django_db
+def test_monthly_charges_endpoint_filters_by_owner(api_client, property_obj):
+    other = User.objects.create_user(username="outsider", password="pass123")
+    foreign_property = Property.objects.create(owner=other, name="Чужой", address="Нет доступа")
+    mine = MonthlyCharge.objects.create(
+        property=property_obj,
+        year=2024,
+        month=5,
+        resource_type=Meter.ELECTRICITY,
+        consumption=Decimal("10.0"),
+        amount=Decimal("100.00"),
+    )
+    MonthlyCharge.objects.create(
+        property=foreign_property,
+        year=2024,
+        month=5,
+        resource_type=Meter.ELECTRICITY,
+        consumption=Decimal("20.0"),
+        amount=Decimal("200.00"),
+    )
+
+    response = api_client.get("/api/monthly-charges/")
+    assert response.status_code == 200
+    assert [item["id"] for item in response.data] == [mine.id]
+
+    filtered = api_client.get("/api/monthly-charges/", {"property": property_obj.id})
+    assert filtered.status_code == 200
+    assert len(filtered.data) == 1
+    assert filtered.data[0]["property"] == property_obj.id
