@@ -31,7 +31,10 @@ services:
       - db
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${FRONTEND_VITE_API_URL:-/api/}
     environment:
       VITE_API_URL: /api/
     volumes:
