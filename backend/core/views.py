@@ -131,7 +131,29 @@ class AnalyticsViewSet(viewsets.ViewSet):
             props_qs = props_qs.filter(id__in=selected_ids)
         props = list(props_qs)
         if not props:
-            return Response({"detail": "Нет доступных объектов для аналитики"}, status=status.HTTP_400_BAD_REQUEST)
+            period = {
+                "start_year": start_year,
+                "start_month": start_month,
+                "end_year": end_year,
+                "end_month": end_month,
+            }
+            return Response(
+                {
+                    "period": period,
+                    "monthly": [],
+                    "monthly_by_resource": [],
+                    "summary": {
+                        "total_amount": 0.0,
+                        "total_consumption": 0.0,
+                        "average_daily_amount": 0.0,
+                        "peak_month": None,
+                        "resources": [],
+                    },
+                    "comparison": [],
+                    "payments": [],
+                    "forecast_amount": 0.0,
+                }
+            )
 
         charges = (
             MonthlyCharge.objects.filter(property__in=props)
@@ -206,7 +228,9 @@ class AnalyticsViewSet(viewsets.ViewSet):
         days_count = len(monthly) * 30 or 1
         average_daily_amount = totals_amount / days_count
 
-        forecast_value = float(sum(forecast_property(p) for p in props) / len(props))
+        forecast_value = (
+            float(sum(forecast_property(p) for p in props) / len(props)) if props else 0.0
+        )
 
         payments = (
             Payment.objects.filter(property__in=props)
