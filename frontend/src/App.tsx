@@ -155,7 +155,7 @@ function AppShell() {
                   <span />
                 </button>
               )}
-              <div className="logo-pill">
+              <div className="logo-pill header-logo">
                 <div className="logo-mini" aria-hidden>
                   <img src="/logo.svg" alt="Эмблема EnergoBoard" />
                 </div>
