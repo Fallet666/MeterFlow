@@ -49,6 +49,7 @@ docker-compose up --build
 - Backend: http://localhost:8000
 - Frontend: http://localhost:5173
 - PostgreSQL: порт 5432, учётные данные в `docker-compose.yml` или `backend/.env.example`.
+- Frontend-контейнер проксирует `/api/` в backend, поэтому из браузера используются относительные запросы (`VITE_API_URL=/api/`). Если фронтенд опубликован под доменом, убедитесь, что внешняя точка входа (nginx/Ingress) также проксирует `/api/` на backend:8000.
 
 ### Прогон тестов через Docker Compose
 - Все сервисы + тестовые контейнеры:

@@ -33,7 +33,7 @@ services:
   frontend:
     build: ./frontend
     environment:
-      VITE_API_URL: http://localhost:8000/api/
+      VITE_API_URL: /api/
     volumes:
       - ./frontend:/app
       - /app/node_modules
