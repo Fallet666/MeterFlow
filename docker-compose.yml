@@ -56,7 +56,8 @@ services:
     volumes:
       - tests-sync:/tests-sync
     command: >
-      sh -c "pytest &&
+      sh -c "rm -f /tests-sync/backend_done /tests-sync/frontend_done &&
+      pytest &&
       touch /tests-sync/backend_done &&
       while [ ! -f /tests-sync/frontend_done ]; do
         sleep 1;
@@ -71,14 +72,19 @@ services:
     environment:
       VITE_API_URL: http://localhost:8000/api/
       CI: "true"
+    depends_on:
+      - backend-tests
     volumes:
       - ./frontend:/app
       - tests-sync:/tests-sync
     command: >
-      sh -c "npm ci &&
+      sh -c "rm -f /tests-sync/backend_done /tests-sync/frontend_done &&
+      npm ci &&
       npm test &&
       touch /tests-sync/frontend_done &&
-      tail -f /dev/null"
+      while [ ! -f /tests-sync/backend_done ]; do
+        sleep 1;
+      done"
 
 volumes:
   postgres_data:
