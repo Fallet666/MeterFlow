@@ -1,5 +1,3 @@
-const MOSHUB_LINK = "#"; // замените на реальную ссылку, когда она появится
-
 export function Footer() {
   return (
     <footer className="site-footer">
@@ -8,7 +6,7 @@ export function Footer() {
         <p className="footer-text">Цифровой помощник для учета коммунальных показаний и аналитики.</p>
       </div>
       <div className="footer-links">
-        <a href={MOSHUB_LINK} target="_blank" rel="noreferrer">
+        <a href="https://hub.mos.ru/korotkov_aleksey/meterflow" target="_blank" rel="noreferrer">
           Moshub
         </a>
         <a href="https://t.me/born_in_void" target="_blank" rel="noreferrer">
