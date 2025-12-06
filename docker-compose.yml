@@ -42,5 +42,31 @@ services:
     depends_on:
       - backend
 
+  backend-tests:
+    build: ./backend
+    profiles: ["test"]
+    env_file:
+      - ./backend/.env.example
+    environment:
+      DB_ENGINE: postgres
+      POSTGRES_DB: meterflow
+      POSTGRES_USER: meterflow
+      POSTGRES_PASSWORD: meterflow
+      POSTGRES_HOST: db
+    command: ["python", "manage.py", "test"]
+    depends_on:
+      - db
+
+  frontend-tests:
+    image: node:20-alpine
+    profiles: ["test"]
+    working_dir: /app
+    environment:
+      VITE_API_URL: http://localhost:8000/api/
+      CI: "true"
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm ci && npm test"
+
 volumes:
   postgres_data:
