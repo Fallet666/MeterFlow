@@ -172,8 +172,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("История показаний и начислений создана"))
 
-        for prop in property_objects:
-            self._ensure_payments(prop)
+        for profile in property_objects:
+            self._ensure_payments(profile["instance"])
 
         self.stdout.write(self.style.SUCCESS("Платежи созданы"))
 
