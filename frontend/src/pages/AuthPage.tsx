@@ -47,14 +47,10 @@ export function AuthPage({ onAuthenticated, onRegister, onLogin }: Props) {
       </div>
 
       <div className="auth-card">
-        <div className="auth-meta">
-          <div>
-            <p className="subtitle">{isRegister ? "Создайте аккаунт" : "Вход в кабинет"}</p>
-            <h3 style={{ margin: 0 }}>{isRegister ? "Регистрация" : "Авторизация"}</h3>
-          </div>
-          <div className="auth-toggle">
-            <span className="tag">Защищённый доступ</span>
-          </div>
+        <div className="auth-card-header">
+          <p className="subtitle">{isRegister ? "Создайте доступ" : "Войдите, чтобы продолжить"}</p>
+          <h3 className="auth-title">{isRegister ? "Регистрация" : "Авторизация"}</h3>
+          <p className="subtitle muted-text">Данные передаются по защищённому соединению.</p>
         </div>
         <form onSubmit={handleSubmit} className="auth-form">
           <label>
@@ -88,15 +84,17 @@ export function AuthPage({ onAuthenticated, onRegister, onLogin }: Props) {
             />
           </label>
           {error && <div className="error">{error}</div>}
-          <div className="actions">
+          <div className="actions auth-actions">
             <button type="submit">{isRegister ? "Создать аккаунт" : "Войти"}</button>
-            <button className="ghost" type="button" onClick={() => setIsRegister((v) => !v)}>
-              {isRegister ? "У меня уже есть аккаунт" : "Создать новый доступ"}
+            <button
+              className="link"
+              type="button"
+              onClick={() => setIsRegister((v) => !v)}
+            >
+              {isRegister ? "У меня уже есть доступ" : "Создать новый доступ"}
             </button>
           </div>
-          <p className="subtitle">
-            Авторизация проходит через сохранённые учётные данные. Доступ к API не меняется.
-          </p>
+          <p className="subtitle">Авторизация проходит через сохранённые учётные данные.</p>
         </form>
       </div>
     </div>
