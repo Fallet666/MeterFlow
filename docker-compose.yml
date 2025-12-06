@@ -47,5 +47,35 @@ services:
       - backend_energo
     restart: unless-stopped
 
+  backend-tests:
+    profiles: ["test"]
+    build: ./backend
+    env_file:
+      - ./backend/.env.example
+    environment:
+      DB_ENGINE: postgres
+      POSTGRES_DB: energo
+      POSTGRES_USER: energo
+      POSTGRES_PASSWORD: energo
+      POSTGRES_HOST: db_energo
+    command: sh -c "python manage.py migrate && python manage.py test"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db_energo:
+        condition: service_healthy
+
+  frontend-tests:
+    profiles: ["test"]
+    build:
+      context: ./frontend
+      target: build
+      args:
+        VITE_API_URL: http://localhost:7011/api/
+    environment:
+      CI: "1"
+    working_dir: /app
+    command: ["npm", "run", "test", "--", "--run"]
+
 volumes:
   postgres_data_energo:
