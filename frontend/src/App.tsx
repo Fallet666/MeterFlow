@@ -35,7 +35,9 @@ function AppShell() {
     const stored = localStorage.getItem("activeProperty");
     return stored ? Number(stored) : null;
   });
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : true,
+  );
 
   useEffect(() => {
     if (access) {
@@ -67,6 +69,22 @@ function AppShell() {
 
   const authed = useMemo(() => !!access, [access]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      const isDesktop = window.innerWidth >= 1024;
+      setSidebarOpen((prev) => (isDesktop ? true : prev));
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname]);
+
   const navSections = [
     {
       label: "Рабочая среда",
@@ -97,7 +115,7 @@ function AppShell() {
     <div className={shellClass}>
       {authed && !isAuthRoute && (
         <>
-          <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+          <aside id="sidebar" className={`sidebar ${sidebarOpen ? "open" : ""}`} aria-label="Основная навигация">
             <div className="brand-block">
               <div className="brand-mark" aria-hidden>
                 <img src="/logo.svg" alt="Эмблема EnergoBoard" />
@@ -150,7 +168,14 @@ function AppShell() {
           <header className="app-header">
             <div className="header-left">
               {authed && (
-                <button className="icon-button" type="button" onClick={() => setSidebarOpen((v) => !v)} aria-label="Навигация">
+                <button
+                  className="icon-button"
+                  type="button"
+                  onClick={() => setSidebarOpen((v) => !v)}
+                  aria-label="Переключить навигацию"
+                  aria-expanded={sidebarOpen}
+                  aria-controls="sidebar"
+                >
                   <span />
                   <span />
                 </button>
@@ -168,16 +193,7 @@ function AppShell() {
                 <span className="dot" />Рабочая среда
               </div>
             </div>
-            {authed && (
-              <div className="user-menu">
-                {selectedProperty && (
-                  <span className="pill muted">
-                    Объект: {properties.find((p) => p.id === selectedProperty)?.name || "—"}
-                  </span>
-                )}
-                <span className="pill">Данные обновлены</span>
-              </div>
-            )}
+            {authed && <div className="user-menu" aria-hidden />}
           </header>
         )}
         <main className={`content ${isAuthRoute ? "auth-content" : ""}`}>
