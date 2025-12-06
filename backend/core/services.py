@@ -1,3 +1,4 @@
+from calendar import monthrange
 from datetime import date, timedelta
 from decimal import Decimal
 from typing import Optional
@@ -82,56 +83,250 @@ def ensure_demo_data(user) -> None:
     if Property.objects.filter(owner=user).exists():
         return
 
-    home = Property.objects.create(
-        owner=user,
-        name="Демо-квартира",
-        address="Москва, Петровка, 38",
-    )
+    today = date.today().replace(day=1)
 
-    tariff_values = {
-        Meter.ELECTRICITY: Decimal("6.80"),
-        Meter.COLD_WATER: Decimal("45.10"),
-        Meter.HOT_WATER: Decimal("210.50"),
-        Meter.GAS: Decimal("7.20"),
-        Meter.HEATING: Decimal("1800"),
-    }
+    def month_end(months_back: int) -> date:
+        year = today.year
+        month = today.month - months_back
+        while month <= 0:
+            month += 12
+            year -= 1
+        last_day = monthrange(year, month)[1]
+        return date(year, month, last_day)
 
-    for resource, value in tariff_values.items():
-        Tariff.objects.get_or_create(
-            resource_type=resource,
-            valid_from=date(date.today().year - 1, 1, 1),
-            defaults={"value_per_unit": value},
-        )
+    def emit_history(meter: Meter, start_value: Decimal, plan: list[Decimal]) -> None:
+        value = start_value
+        periods = len(plan)
+        for idx, delta in enumerate(plan):
+            value += delta
+            reading_date = month_end(periods - idx)
+            reading = Reading.objects.create(
+                meter=meter,
+                value=value.quantize(Decimal("0.001")),
+                reading_date=reading_date,
+            )
+            process_reading(reading)
 
-    meter_map = {}
-    for resource, serial, unit in [
-        (Meter.ELECTRICITY, "EL-001245", "kWh"),
-        (Meter.COLD_WATER, "CW-55421", "м³"),
-        (Meter.HOT_WATER, "HW-12002", "м³"),
-    ]:
-        meter, _ = Meter.objects.get_or_create(
-            property=home,
-            resource_type=resource,
-            defaults={"serial_number": serial, "unit": unit},
-        )
-        meter_map[resource] = meter
-
-    if Reading.objects.filter(meter__property=home).exists():
-        return
-
-    history = [
-        (Meter.ELECTRICITY, Decimal("1240"), date.today().replace(day=1) - timedelta(days=90)),
-        (Meter.ELECTRICITY, Decimal("1312"), date.today().replace(day=1) - timedelta(days=60)),
-        (Meter.ELECTRICITY, Decimal("1394"), date.today().replace(day=1) - timedelta(days=30)),
-        (Meter.COLD_WATER, Decimal("15.2"), date.today().replace(day=1) - timedelta(days=45)),
-        (Meter.COLD_WATER, Decimal("17.8"), date.today().replace(day=1) - timedelta(days=15)),
-        (Meter.HOT_WATER, Decimal("9.5"), date.today().replace(day=1) - timedelta(days=45)),
-        (Meter.HOT_WATER, Decimal("11.1"), date.today().replace(day=1) - timedelta(days=15)),
+    tariff_windows = [
+        {
+            "valid_from": today.replace(year=today.year - 2, month=1, day=1),
+            "valid_to": today.replace(year=today.year - 1, month=8, day=31),
+            "values": {
+                Meter.ELECTRICITY: Decimal("5.65"),
+                Meter.COLD_WATER: Decimal("37.20"),
+                Meter.HOT_WATER: Decimal("176.80"),
+                Meter.GAS: Decimal("5.95"),
+                Meter.HEATING: Decimal("1505.00"),
+            },
+        },
+        {
+            "valid_from": today.replace(year=today.year - 1, month=9, day=1),
+            "valid_to": None,
+            "values": {
+                Meter.ELECTRICITY: Decimal("7.10"),
+                Meter.COLD_WATER: Decimal("46.30"),
+                Meter.HOT_WATER: Decimal("224.10"),
+                Meter.GAS: Decimal("8.05"),
+                Meter.HEATING: Decimal("1940.00"),
+            },
+        },
     ]
 
-    for resource, value, reading_date in history:
-        meter = meter_map.get(resource)
-        if not meter:
-            continue
-        reading = Reading.objects.create(meter=meter, value=value, reading_date=reading_date)
-        process_reading(reading)
+    for window in tariff_windows:
+        for resource, value in window["values"].items():
+            Tariff.objects.update_or_create(
+                resource_type=resource,
+                valid_from=window["valid_from"],
+                defaults={"value_per_unit": value, "valid_to": window["valid_to"]},
+            )
+
+    scenarios = [
+        {
+            "name": "Смарт-квартира в Москва-Сити",
+            "address": "Москва, наб. Пресненская, 8, башня Восток",
+            "meters": [
+                {
+                    "resource": Meter.ELECTRICITY,
+                    "serial": "ELX-93A1",
+                    "unit": "кВт·ч",
+                    "start": Decimal("2180.4"),
+                    "plan": [
+                        Decimal("126.4"),
+                        Decimal("135.1"),
+                        Decimal("140.3"),
+                        Decimal("150.8"),
+                        Decimal("156.2"),
+                        Decimal("164.5"),
+                        Decimal("170.1"),
+                        Decimal("165.4"),
+                    ],
+                },
+                {
+                    "resource": Meter.COLD_WATER,
+                    "serial": "CWX-55B1",
+                    "unit": "м³",
+                    "start": Decimal("48.2"),
+                    "plan": [
+                        Decimal("3.2"),
+                        Decimal("3.8"),
+                        Decimal("4.0"),
+                        Decimal("4.4"),
+                        Decimal("4.7"),
+                        Decimal("5.1"),
+                        Decimal("4.9"),
+                        Decimal("5.4"),
+                    ],
+                },
+                {
+                    "resource": Meter.HEATING,
+                    "serial": "HTX-31C8",
+                    "unit": "Гкал",
+                    "start": Decimal("18.5"),
+                    "plan": [
+                        Decimal("1.6"),
+                        Decimal("1.8"),
+                        Decimal("1.9"),
+                        Decimal("2.3"),
+                        Decimal("2.4"),
+                        Decimal("2.1"),
+                        Decimal("2.0"),
+                        Decimal("1.7"),
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Арт-пространство «Смена»",
+            "address": "Екатеринбург, ул. Вайнера, 12 корп. 4",
+            "meters": [
+                {
+                    "resource": Meter.ELECTRICITY,
+                    "serial": "ELX-45Q2",
+                    "unit": "кВт·ч",
+                    "start": Decimal("780.0"),
+                    "plan": [
+                        Decimal("212.4"),
+                        Decimal("220.8"),
+                        Decimal("240.7"),
+                        Decimal("255.1"),
+                        Decimal("248.3"),
+                        Decimal("262.9"),
+                        Decimal("271.4"),
+                        Decimal("268.0"),
+                    ],
+                },
+                {
+                    "resource": Meter.GAS,
+                    "serial": "GSX-77Z1",
+                    "unit": "м³",
+                    "start": Decimal("320.5"),
+                    "plan": [
+                        Decimal("40.1"),
+                        Decimal("44.6"),
+                        Decimal("48.2"),
+                        Decimal("52.7"),
+                        Decimal("55.3"),
+                        Decimal("58.1"),
+                        Decimal("49.8"),
+                        Decimal("47.6"),
+                    ],
+                },
+                {
+                    "resource": Meter.COLD_WATER,
+                    "serial": "CWX-73K4",
+                    "unit": "м³",
+                    "start": Decimal("102.1"),
+                    "plan": [
+                        Decimal("6.4"),
+                        Decimal("6.8"),
+                        Decimal("7.0"),
+                        Decimal("7.5"),
+                        Decimal("7.8"),
+                        Decimal("8.1"),
+                        Decimal("8.9"),
+                        Decimal("7.7"),
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "Дом на склоне Янган-Тау",
+            "address": "Башкортостан, Малояз, горнолыжный склон",
+            "meters": [
+                {
+                    "resource": Meter.ELECTRICITY,
+                    "serial": "ELX-12M9",
+                    "unit": "кВт·ч",
+                    "start": Decimal("410.2"),
+                    "plan": [
+                        Decimal("82.4"),
+                        Decimal("90.7"),
+                        Decimal("96.2"),
+                        Decimal("101.8"),
+                        Decimal("110.4"),
+                        Decimal("124.7"),
+                        Decimal("118.3"),
+                        Decimal("95.6"),
+                    ],
+                },
+                {
+                    "resource": Meter.GAS,
+                    "serial": "GSX-19D5",
+                    "unit": "м³",
+                    "start": Decimal("210.7"),
+                    "plan": [
+                        Decimal("32.1"),
+                        Decimal("35.0"),
+                        Decimal("36.4"),
+                        Decimal("38.7"),
+                        Decimal("41.3"),
+                        Decimal("43.8"),
+                        Decimal("45.9"),
+                        Decimal("39.4"),
+                    ],
+                },
+                {
+                    "resource": Meter.HOT_WATER,
+                    "serial": "HWX-28F7",
+                    "unit": "м³",
+                    "start": Decimal("34.0"),
+                    "plan": [
+                        Decimal("2.4"),
+                        Decimal("2.6"),
+                        Decimal("2.8"),
+                        Decimal("3.0"),
+                        Decimal("3.3"),
+                        Decimal("3.9"),
+                        Decimal("3.1"),
+                        Decimal("2.7"),
+                    ],
+                },
+            ],
+        },
+    ]
+
+    for scenario in scenarios:
+        property_obj, _ = Property.objects.get_or_create(
+            owner=user,
+            name=scenario["name"],
+            defaults={"address": scenario["address"]},
+        )
+        property_obj.address = scenario["address"]
+        property_obj.save()
+
+        for meter_config in scenario["meters"]:
+            meter, _ = Meter.objects.get_or_create(
+                property=property_obj,
+                resource_type=meter_config["resource"],
+                defaults={
+                    "serial_number": meter_config["serial"],
+                    "unit": meter_config["unit"],
+                    "installed_at": date.today() - timedelta(days=420),
+                    "is_active": True,
+                },
+            )
+
+            if meter.readings.exists():
+                continue
+
+            emit_history(meter, meter_config["start"], meter_config["plan"])
