@@ -18,6 +18,7 @@ import {
   ReadingsPage,
 } from "./pages";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { Footer } from "./components/Footer";
 import "./App.css";
 
 export type Property = { id: number; name: string; address: string };
@@ -237,6 +238,7 @@ function AppShell() {
           </Routes>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
