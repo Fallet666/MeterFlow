@@ -50,6 +50,21 @@ docker-compose up --build
 - Frontend: http://localhost:5173
 - PostgreSQL: порт 5432, учётные данные в `docker-compose.yml` или `backend/.env.example`.
 
+### Прогон тестов через Docker Compose
+- Все сервисы + тестовые контейнеры:
+  ```bash
+  docker compose --profile test up --build --abort-on-container-exit
+  ```
+- Только фронтенд-тесты без поднятия приложения:
+  ```bash
+  docker compose --profile test run --rm frontend-tests
+  ```
+- Только бэкенд-тесты (использует PostgreSQL из docker-compose):
+  ```bash
+  docker compose --profile test run --rm backend-tests
+  ```
+Профиль `test` добавляет отдельные контейнеры для прогонки тестов и не влияет на обычный деплой через `docker-compose up`.
+
 ## Основные эндпоинты
 - `POST /api/auth/register/` — регистрация пользователя с мгновенной выдачей токенов.
 - `POST /api/auth/login/` — получение JWT.
