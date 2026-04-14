@@ -30,31 +30,41 @@ def find_tariff(resource_type: str, target_date: date) -> Optional[Tariff]:
 
 @transaction.atomic
 def process_reading(reading: Reading) -> None:
-    previous = get_previous_reading(reading.meter, reading.reading_date)
-    delta = Decimal("0")
-    if previous:
-        delta = reading.value - previous.value
-        if delta < 0:
-            delta = Decimal("0")
+    rebuild_monthly_charges(reading.meter.property, reading.meter.resource_type)
 
-    tariff = find_tariff(reading.meter.resource_type, reading.reading_date)
-    if tariff is None or delta <= 0:
-        return
 
-    year = reading.reading_date.year
-    month = reading.reading_date.month
+@transaction.atomic
+def rebuild_monthly_charges(property_obj: Property, resource_type: str) -> None:
+    MonthlyCharge.objects.filter(property=property_obj, resource_type=resource_type).delete()
 
-    charge, _ = MonthlyCharge.objects.get_or_create(
-        property=reading.meter.property,
-        year=year,
-        month=month,
-        resource_type=reading.meter.resource_type,
-        defaults={"consumption": Decimal("0"), "amount": Decimal("0")},
-    )
+    meters = Meter.objects.filter(property=property_obj, resource_type=resource_type)
+    for meter in meters:
+        previous = None
+        readings = meter.readings.order_by("reading_date", "created_at", "id")
+        for reading in readings:
+            if previous is None:
+                previous = reading
+                continue
 
-    charge.consumption += delta
-    charge.amount += delta * tariff.value_per_unit
-    charge.save()
+            delta = reading.value - previous.value
+            previous = reading
+            if delta <= 0:
+                continue
+
+            tariff = find_tariff(resource_type, reading.reading_date)
+            if tariff is None:
+                continue
+
+            charge, _ = MonthlyCharge.objects.get_or_create(
+                property=property_obj,
+                year=reading.reading_date.year,
+                month=reading.reading_date.month,
+                resource_type=resource_type,
+                defaults={"consumption": Decimal("0"), "amount": Decimal("0")},
+            )
+            charge.consumption += delta
+            charge.amount += delta * tariff.value_per_unit
+            charge.save()
 
 
 def forecast_property(property_obj: Property, months: int = 3) -> Decimal:

@@ -1,7 +1,5 @@
 from datetime import date
 
-from datetime import date
-
 from django.contrib.auth.models import User
 from django.db.models import Q, Sum
 from rest_framework import generics, permissions, status, viewsets
@@ -22,6 +20,39 @@ from .serializers import (
     UserSerializer,
 )
 from .services import ensure_demo_data, forecast_property
+from .services import rebuild_monthly_charges
+
+
+def _parse_int_param(params, name, default=None, *, min_value=None, max_value=None):
+    raw = params.get(name, default)
+    if raw in (None, ""):
+        return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        raise ValueError(f"{name} must be an integer")
+    if min_value is not None and value < min_value:
+        raise ValueError(f"{name} must be at least {min_value}")
+    if max_value is not None and value > max_value:
+        raise ValueError(f"{name} must be at most {max_value}")
+    return value
+
+
+def _parse_id_list(raw):
+    if not raw:
+        return []
+    values = []
+    for item in raw.split(","):
+        if not item:
+            continue
+        try:
+            value = int(item)
+        except ValueError:
+            raise ValueError("properties must contain integer ids")
+        if value <= 0:
+            raise ValueError("properties must contain positive ids")
+        values.append(value)
+    return values
 
 
 class RegistrationView(generics.CreateAPIView):
@@ -85,6 +116,19 @@ class ReadingViewSet(viewsets.ModelViewSet):
             qs = qs.filter(meter_id=meter_id)
         return qs
 
+    def perform_update(self, serializer):
+        old_meter = self.get_object().meter
+        reading = serializer.save()
+        rebuild_monthly_charges(old_meter.property, old_meter.resource_type)
+        if reading.meter_id != old_meter.id:
+            rebuild_monthly_charges(reading.meter.property, reading.meter.resource_type)
+
+    def perform_destroy(self, instance):
+        property_obj = instance.meter.property
+        resource_type = instance.meter.resource_type
+        instance.delete()
+        rebuild_monthly_charges(property_obj, resource_type)
+
 
 class MonthlyChargeViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = MonthlyChargeSerializer
@@ -112,19 +156,20 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 class AnalyticsViewSet(viewsets.ViewSet):
     def list(self, request):
-        property_id = request.query_params.get("property")
-        properties_param = request.query_params.get("properties")
-        resource_type = request.query_params.get("resource_type")
-        start_year = int(request.query_params.get("start_year", date.today().year - 1))
-        start_month = int(request.query_params.get("start_month", 1))
-        end_year = int(request.query_params.get("end_year", date.today().year))
-        end_month = int(request.query_params.get("end_month", 12))
+        try:
+            property_id = _parse_int_param(request.query_params, "property", min_value=1)
+            properties_param = request.query_params.get("properties")
+            resource_type = request.query_params.get("resource_type")
+            start_year = _parse_int_param(request.query_params, "start_year", date.today().year - 1)
+            start_month = _parse_int_param(request.query_params, "start_month", 1, min_value=1, max_value=12)
+            end_year = _parse_int_param(request.query_params, "end_year", date.today().year)
+            end_month = _parse_int_param(request.query_params, "end_month", 12, min_value=1, max_value=12)
+            selected_ids = _parse_id_list(properties_param)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         props_qs = Property.objects.filter(owner=request.user)
-        selected_ids = []
-        if properties_param:
-            selected_ids = [int(p) for p in properties_param.split(",") if p]
-        elif property_id:
+        if not selected_ids and property_id:
             selected_ids = [int(property_id)]
 
         if selected_ids:
