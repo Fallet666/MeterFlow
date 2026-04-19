@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { errorMessage } from "../safety";
 
 interface Props {
   onAuthenticated: (data: any) => void;
@@ -21,7 +22,7 @@ export function AuthPage({ onAuthenticated, onRegister, onLogin }: Props) {
         : await onLogin(username, password);
       onAuthenticated(payload);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Ошибка авторизации");
+      setError(errorMessage(err?.response?.data?.detail, "Ошибка авторизации"));
     }
   };
 

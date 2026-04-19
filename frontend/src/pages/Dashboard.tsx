@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import api from "../api";
 import { Property } from "../App";
+import { FavoriteChartConfig, arrayOrEmpty, numberOrZero, parseFavoriteCharts } from "../safety";
 
 const RESOURCE_LABELS: Record<string, string> = {
   electricity: "Электричество",
@@ -27,14 +28,6 @@ interface AnalyticsResponse {
   monthly_by_resource?: { month: string; resource_type: string; consumption: number; amount: number }[];
 }
 
-type FavoriteChartConfig = {
-  id: string;
-  name: string;
-  properties: number[];
-  resourceType: string;
-  rangePreset: "year" | "half" | "two";
-};
-
 const FAVORITES_KEY = "mf_favorite_charts";
 const RANGE_LABELS: Record<FavoriteChartConfig["rangePreset"], string> = {
   year: "Год",
@@ -43,6 +36,26 @@ const RANGE_LABELS: Record<FavoriteChartConfig["rangePreset"], string> = {
 };
 
 const getMonthKey = (dateObj: Date) => `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
+
+const normalizeAnalyticsResponse = (data: unknown): AnalyticsResponse => {
+  const source = data && typeof data === "object" && !Array.isArray(data) ? data as Record<string, unknown> : {};
+  const summary = source.summary && typeof source.summary === "object" ? source.summary as Record<string, unknown> : {};
+  return {
+    monthly: arrayOrEmpty<Record<string, unknown>>(source.monthly)
+      .map((item) => ({
+        month: typeof item.month === "string" ? item.month : "",
+        total_amount: numberOrZero(item.total_amount),
+      }))
+      .filter((item) => item.month),
+    summary: { total_amount: numberOrZero(summary.total_amount) },
+    monthly_by_resource: arrayOrEmpty<Record<string, unknown>>(source.monthly_by_resource).map((item) => ({
+      month: typeof item.month === "string" ? item.month : "",
+      resource_type: typeof item.resource_type === "string" ? item.resource_type : "",
+      consumption: numberOrZero(item.consumption),
+      amount: numberOrZero(item.amount),
+    })),
+  };
+};
 
 export function Dashboard({ selectedProperty, properties, onSelectProperty }: Props) {
   const [forecast, setForecast] = useState<number>(0);
@@ -64,7 +77,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
         .then(({ data }) => setForecast(Number(data.forecast_amount) || 0));
       api
         .get("readings/", { params: { meter__property: selectedProperty } })
-        .then(({ data }) => setReadings(data.slice(0, 5)));
+        .then(({ data }) => setReadings(arrayOrEmpty(data).slice(0, 5)));
       const startDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
       api
         .get<AnalyticsResponse>("analytics/", {
@@ -76,7 +89,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
             end_month: new Date().getMonth() + 1,
           },
         })
-        .then(({ data }) => setCharges(data));
+        .then(({ data }) => setCharges(normalizeAnalyticsResponse(data)));
     }
   }, [selectedProperty]);
 
@@ -84,7 +97,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
     const stored = localStorage.getItem(FAVORITES_KEY);
     if (stored) {
       try {
-        setFavoriteCharts(JSON.parse(stored));
+        setFavoriteCharts(parseFavoriteCharts(stored));
       } catch (e) {
         console.error(e);
       }
@@ -104,7 +117,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
         .then(({ data }) =>
           setFavoritesData((prev) => ({
             ...prev,
-            [favorite.id]: data,
+            [favorite.id]: normalizeAnalyticsResponse(data),
           })),
         )
         .catch(() => undefined);
@@ -257,7 +270,7 @@ export function Dashboard({ selectedProperty, properties, onSelectProperty }: Pr
                 <tr key={r.id}>
                   <td>{getMeterLabel(r)}</td>
                   <td>{getValueWithUnit(r)}</td>
-                  <td>{r.amount_value ? `${Number(r.amount_value).toFixed(2)} ₽` : "—"}</td>
+                  <td>{numberOrZero(r.amount_value) ? `${numberOrZero(r.amount_value).toFixed(2)} ₽` : "—"}</td>
                   <td>{r.reading_date}</td>
                 </tr>
               ))}

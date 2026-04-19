@@ -9,6 +9,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:fuzz": "vitest run src/__tests__/Fuzzing.test.tsx",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -19,6 +20,9 @@
     "recharts": "^3.5.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
@@ -27,12 +31,10 @@
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "fast-check": "^4.8.0",
     "jsdom": "^26.0.0",
     "typescript": "^5.2.2",
     "vite": "^5.4.21",
-    "vitest": "^3.0.6",
-    "@testing-library/react": "^16.2.0",
-    "@testing-library/user-event": "^14.6.1",
-    "@testing-library/jest-dom": "^6.6.3"
+    "vitest": "^3.0.6"
   }
 }

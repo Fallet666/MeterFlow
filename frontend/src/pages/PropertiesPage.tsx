@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import api, { authApi } from "../api";
 import { Property } from "../App";
+import { parseStoredUser } from "../safety";
 
 interface Props {
   properties: Property[];
@@ -21,8 +22,7 @@ export function PropertiesPage({ properties, onUpdated, selectedProperty, onSele
 
   const currentUsername = useMemo(() => {
     if (user?.username) return user.username;
-    const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored)?.username : "";
+    return parseStoredUser(localStorage.getItem("user"))?.username || "";
   }, [user]);
 
   useEffect(() => {

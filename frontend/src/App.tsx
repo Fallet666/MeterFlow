@@ -19,6 +19,7 @@ import {
 } from "./pages";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Footer } from "./components/Footer";
+import { parsePositiveInt, parseStoredUser } from "./safety";
 import "./App.css";
 
 export type Property = { id: number; name: string; address: string };
@@ -37,13 +38,11 @@ function AppShell() {
   const location = useLocation();
   const [access, setAccess] = useState<string | null>(localStorage.getItem("access"));
   const [user, setUser] = useState<any>(() => {
-    const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored) : null;
+    return parseStoredUser(localStorage.getItem("user"));
   });
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<number | null>(() => {
-    const stored = localStorage.getItem("activeProperty");
-    return stored ? Number(stored) : null;
+    return parsePositiveInt(localStorage.getItem("activeProperty"));
   });
   const [navOpen, setNavOpen] = useState(false);
 

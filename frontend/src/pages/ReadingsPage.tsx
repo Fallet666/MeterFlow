@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import api from "../api";
 import { Meter, Property } from "../App";
+import { errorMessage } from "../safety";
 
 const RESOURCE_LABELS: Record<string, string> = {
   electricity: "Электричество",
@@ -65,7 +66,7 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
     }
 
     const numeric = Number(value);
-    if (Number.isNaN(numeric) || numeric <= 0) {
+    if (!Number.isFinite(numeric) || numeric <= 0) {
       setError("Введите корректное значение показания");
       return;
     }
@@ -80,7 +81,7 @@ export function ReadingsPage({ selectedProperty, properties, onSelectProperty }:
       setValue("");
       setStatus("Показание сохранено");
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Не удалось сохранить показание");
+      setError(errorMessage(err?.response?.data?.detail, "Не удалось сохранить показание"));
     }
   };
 

@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import api from "../api";
 import { Property } from "../App";
+import { FavoriteChartConfig, arrayOrEmpty, numberOrZero, parseFavoriteCharts } from "../safety";
 
 interface Props {
   selectedProperty: number | null;
@@ -40,14 +41,6 @@ interface AnalyticsResponse {
   comparison: { property__id: number; property__name: string; total_amount: number; total_consumption: number }[];
   forecast_amount: number;
 }
-
-type FavoriteChartConfig = {
-  id: string;
-  name: string;
-  properties: number[];
-  resourceType: string;
-  rangePreset: keyof typeof RANGE_PRESETS;
-};
 
 const FAVORITES_KEY = "mf_favorite_charts";
 
@@ -77,6 +70,55 @@ const buildPeriodFromPreset = (preset: keyof typeof RANGE_PRESETS) => {
   };
 };
 
+const normalizeAnalyticsResponse = (data: unknown): AnalyticsResponse => {
+  const source = data && typeof data === "object" && !Array.isArray(data) ? data as Record<string, unknown> : {};
+  const period = source.period && typeof source.period === "object" ? source.period as Record<string, unknown> : {};
+  const summary = source.summary && typeof source.summary === "object" ? source.summary as Record<string, unknown> : {};
+  return {
+    period: {
+      start_year: numberOrZero(period.start_year),
+      start_month: numberOrZero(period.start_month),
+      end_year: numberOrZero(period.end_year),
+      end_month: numberOrZero(period.end_month),
+    },
+    monthly: arrayOrEmpty<Record<string, unknown>>(source.monthly)
+      .map((item) => ({
+        month: typeof item.month === "string" ? item.month : "",
+        total_amount: numberOrZero(item.total_amount),
+        total_consumption: numberOrZero(item.total_consumption),
+        cumulative_amount: numberOrZero(item.cumulative_amount),
+      }))
+      .filter((item) => item.month),
+    monthly_by_resource: arrayOrEmpty<Record<string, unknown>>(source.monthly_by_resource)
+      .map((item) => ({
+        month: typeof item.month === "string" ? item.month : "",
+        resource_type: typeof item.resource_type === "string" ? item.resource_type : "",
+        consumption: numberOrZero(item.consumption),
+        amount: numberOrZero(item.amount),
+      }))
+      .filter((item) => item.month && item.resource_type),
+    summary: {
+      total_amount: numberOrZero(summary.total_amount),
+      total_consumption: numberOrZero(summary.total_consumption),
+      average_daily_amount: numberOrZero(summary.average_daily_amount),
+      peak_month: typeof summary.peak_month === "string" ? summary.peak_month : null,
+      resources: arrayOrEmpty<Record<string, unknown>>(summary.resources).map((item) => ({
+        resource_type: typeof item.resource_type === "string" ? item.resource_type : "",
+        total_consumption: numberOrZero(item.total_consumption),
+        total_amount: numberOrZero(item.total_amount),
+        unit: typeof item.unit === "string" ? item.unit : "",
+      })).filter((item) => item.resource_type),
+    },
+    comparison: arrayOrEmpty<Record<string, unknown>>(source.comparison).map((item) => ({
+      property__id: numberOrZero(item.property__id),
+      property__name: typeof item.property__name === "string" ? item.property__name : "",
+      total_amount: numberOrZero(item.total_amount),
+      total_consumption: numberOrZero(item.total_consumption),
+    })),
+    forecast_amount: numberOrZero(source.forecast_amount),
+  };
+};
+
 export function AnalyticsPage({ selectedProperty, properties }: Props) {
   const [rangePreset, setRangePreset] = useState<keyof typeof RANGE_PRESETS>("year");
   const [resourceType, setResourceType] = useState<string>("");
@@ -97,11 +139,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
   useEffect(() => {
     const stored = localStorage.getItem(FAVORITES_KEY);
     if (stored) {
-      try {
-        setFavoriteCharts(JSON.parse(stored));
-      } catch (e) {
-        console.error("Failed to parse favorites", e);
-      }
+      setFavoriteCharts(parseFavoriteCharts(stored));
     }
   }, []);
 
@@ -121,7 +159,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
           ...periodParams,
         },
       })
-      .then(({ data }) => setData(data))
+      .then(({ data }) => setData(normalizeAnalyticsResponse(data)))
       .catch(() => setError("Не удалось загрузить аналитику"))
       .finally(() => setLoading(false));
   }, [selectedIds, resourceType, periodParams]);
@@ -139,7 +177,7 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
         .then(({ data }) =>
           setFavoriteData((prev) => ({
             ...prev,
-            [favorite.id]: data,
+            [favorite.id]: normalizeAnalyticsResponse(data),
           })),
         )
         .catch(() => undefined);
@@ -174,8 +212,6 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
     persistFavorites(favoriteCharts.filter((f) => f.id !== id));
   };
 
-  if (!properties.length) return <div className="card">Добавьте объект, чтобы увидеть аналитику.</div>;
-
   const resourceSummary = data?.summary.resources || [];
   const averageDailyAmount = useMemo(() => {
     if (!data) return 0;
@@ -196,6 +232,8 @@ export function AnalyticsPage({ selectedProperty, properties }: Props) {
     Object.values(grouped).forEach((list) => list.sort((a, b) => (a.month > b.month ? 1 : -1)));
     return grouped;
   }, [data]);
+
+  if (!properties.length) return <div className="card">Добавьте объект, чтобы увидеть аналитику.</div>;
 
   return (
     <div className="page">

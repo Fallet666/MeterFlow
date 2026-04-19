@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import api from "../api";
 import { Meter, Property } from "../App";
+import { errorMessage } from "../safety";
 
 const RESOURCE_LABELS: Record<string, string> = {
   electricity: "Электричество",
@@ -52,7 +53,7 @@ export function MetersPage({ selectedProperty, properties, onSelectProperty }: P
       setSerial("");
       setFeedback("Счётчик добавлен");
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Не удалось добавить счётчик");
+      setError(errorMessage(err?.response?.data?.detail, "Не удалось добавить счётчик"));
     }
   };
 
