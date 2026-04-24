@@ -89,8 +89,10 @@ docker-compose up --build
 - Аналитика с графиками начислений и потребления (Recharts).
 
 ## Тестирование
-- **Backend (pytest + pytest-django):** покрыты модели, сериализаторы, ключевые API и аналитика. Перед запуском убедитесь, что зависимости установлены и применены миграции. Команда: `cd backend && pytest`.
-- **Frontend (Vitest + Testing Library):** компонентные тесты страниц авторизации, дашборда, показаний и аналитики с моками API. Команда: `cd frontend && npm test`.
+- **Backend (pytest + pytest-django + Hypothesis):** покрыты модели, сериализаторы, ключевые API, аналитика и property-based fuzzing бизнес-инвариантов. Перед запуском убедитесь, что зависимости установлены и применены миграции. Команда: `cd backend && python -m pytest`.
+- **Frontend (Vitest + Testing Library + fast-check):** компонентные тесты страниц авторизации, дашборда, показаний, аналитики и fuzz/resilience-тесты localStorage/API payloads. Команда: `cd frontend && npm test`.
+- **Точечный fuzzing:** backend `cd backend && python -m pytest core/tests/test_fuzzing.py`, frontend `cd frontend && npm run test:fuzz`.
+- Подробности по покрытию и настройке глубины генерации: [`docs/fuzzing.md`](docs/fuzzing.md).
 - Для PostgreSQL задайте переменные окружения `DB_ENGINE=postgres` и параметры подключения перед запуском тестов, либо оставьте SQLite по умолчанию.
 - Фронтенду нужен `npm install` и актуальное значение `VITE_API_URL`, если API работает не на `http://localhost:8000/api/`.
 
@@ -130,6 +132,7 @@ docker-compose up --build
 - `core/tests/test_serializers.py` — присвоение владельца в `PropertySerializer`, валидация счётчиков по владельцу и расчёт дельт/сумм в `ReadingSerializer`.
 - `core/tests/test_api.py` — e2e-потоки: регистрация/логин с JWT, фильтрация объектов по пользователю, запрет создания счётчика для чужого объекта, пересчёт `MonthlyCharge` при создании показания, валидация платежей, CRUD тарифов, агрегации аналитики, обработка пустых данных и (новое) фильтрация `/api/monthly-charges/` только по своим объектам.
 - `core/tests/test_services.py` — негативные сценарии сервиса начислений (отрицательные показания/откат) и проверка прогноза `forecast_property`, исключающего текущий месяц.
+- `core/tests/test_fuzzing.py` — Hypothesis fuzzing для последовательностей показаний, update/delete показаний, невалидных query-параметров аналитики и доменной валидации финансовых payloads.
 
 #### Frontend (`vitest` + Testing Library)
 - `src/__tests__/AuthPage.test.tsx` — авторизация и регистрация: отправка форм, отображение ошибок API, переключение вкладок.
@@ -139,6 +142,7 @@ docker-compose up --build
 - `src/__tests__/AnalyticsPage.test.tsx` — отображение агрегированных данных и graceful-degradation при ошибке API.
 - `src/__tests__/PropertiesPage.test.tsx` — загрузка и добавление объектов, обязательное подтверждение паролем перед удалением со сверкой ошибок аутентификации.
 - `src/__tests__/MetersPage.test.tsx` — работа со счётчиками: загрузка по объекту, валидация серийного номера, создание, переключение активности и удаление счётчика.
+- `src/__tests__/Fuzzing.test.tsx` — fast-check fuzzing безопасного парсинга localStorage, фильтрации избранных графиков и устойчивости дашборда/аналитики к malformed API payloads.
 
 ### Ручные тест-кейсы
 1. **Регистрация + демо-данные**  
