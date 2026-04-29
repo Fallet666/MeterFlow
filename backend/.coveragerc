@@ -1,0 +1,13 @@
+[run]
+source = core
+omit =
+    */tests/*
+    core/tests.py
+    */migrations/*
+    core/admin.py
+    core/apps.py
+    core/management/*
+
+[report]
+show_missing = True
+skip_empty = True
