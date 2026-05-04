@@ -92,6 +92,7 @@ docker-compose up --build
 - **Backend (pytest + pytest-django + Hypothesis):** покрыты модели, сериализаторы, ключевые API, аналитика и property-based fuzzing бизнес-инвариантов. Перед запуском убедитесь, что зависимости установлены и применены миграции. Команда: `cd backend && python -m pytest`.
 - **Frontend (Vitest + Testing Library + fast-check):** компонентные тесты страниц авторизации, дашборда, показаний, аналитики и fuzz/resilience-тесты localStorage/API payloads. Команда: `cd frontend && npm test`.
 - **Точечный fuzzing:** backend `cd backend && python -m pytest core/tests/test_fuzzing.py`, frontend `cd frontend && npm run test:fuzz`.
+- **Покрытие:** backend `cd backend && python -m pytest --cov --cov-report=term-missing`, frontend `cd frontend && npm run test:coverage`.
 - Подробности по покрытию и настройке глубины генерации: [`docs/fuzzing.md`](docs/fuzzing.md).
 - Для PostgreSQL задайте переменные окружения `DB_ENGINE=postgres` и параметры подключения перед запуском тестов, либо оставьте SQLite по умолчанию.
 - Фронтенду нужен `npm install` и актуальное значение `VITE_API_URL`, если API работает не на `http://localhost:8000/api/`.

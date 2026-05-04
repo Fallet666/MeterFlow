@@ -20,6 +20,13 @@ cd backend
 python -m pytest core/tests/test_fuzzing.py
 ```
 
+Measure backend coverage:
+
+```bash
+cd backend
+python -m pytest --cov --cov-report=term-missing
+```
+
 Covered invariants:
 
 - Chronological meter readings produce `MonthlyCharge` rows equal to the sum of positive deltas.
@@ -45,6 +52,13 @@ Run only frontend fuzz tests:
 ```bash
 cd frontend
 npm run test:fuzz
+```
+
+Measure frontend coverage:
+
+```bash
+cd frontend
+npm run test:coverage
 ```
 
 Covered invariants:

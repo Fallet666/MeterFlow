@@ -9,6 +9,7 @@ npm install
 npm run dev
 npm test
 npm run test:fuzz
+npm run test:coverage
 npm run build
 ```
 
