@@ -2,9 +2,10 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
+from django.contrib.auth.models import User
 
-from core.models import Meter, MonthlyCharge, Reading
-from core.services import forecast_property, process_reading
+from core.models import Meter, MonthlyCharge, Property, Reading, Tariff
+from core.services import ensure_demo_data, forecast_property, process_reading
 
 
 @pytest.mark.django_db
@@ -51,3 +52,20 @@ def test_forecast_property_averages_previous_months(property_obj):
 
     result = forecast_property(property_obj, months=2)
     assert result == Decimal("165.00")
+
+
+@pytest.mark.django_db
+def test_ensure_demo_data_only_for_test_user_and_is_idempotent():
+    regular = User.objects.create_user(username="regular", password="password123")
+    ensure_demo_data(regular)
+    assert Property.objects.filter(owner=regular).count() == 0
+
+    test_user = User.objects.create_user(username="test", password="password123")
+    ensure_demo_data(test_user)
+    ensure_demo_data(test_user)
+
+    demo_property = Property.objects.get(owner=test_user)
+    assert demo_property.meters.count() == 3
+    assert Reading.objects.filter(meter__property=demo_property).count() == 7
+    assert Tariff.objects.count() == 5
+    assert MonthlyCharge.objects.filter(property=demo_property).exists()

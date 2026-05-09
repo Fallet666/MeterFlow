@@ -205,3 +205,68 @@ def test_monthly_charges_endpoint_filters_by_owner(api_client, property_obj):
     assert filtered.status_code == 200
     assert len(filtered.data) == 1
     assert filtered.data[0]["property"] == property_obj.id
+
+
+@pytest.mark.django_db
+def test_list_endpoints_apply_query_filters(api_client, property_obj, meter):
+    other_meter = Meter.objects.create(
+        property=property_obj,
+        resource_type=Meter.COLD_WATER,
+        unit="m3",
+        serial_number="CW-1",
+    )
+    own_reading = Reading.objects.create(meter=meter, value=Decimal("10"), reading_date=date(2024, 1, 1))
+    Reading.objects.create(meter=other_meter, value=Decimal("3"), reading_date=date(2024, 1, 1))
+    MonthlyCharge.objects.create(
+        property=property_obj,
+        year=2024,
+        month=1,
+        resource_type=Meter.ELECTRICITY,
+        consumption=Decimal("10"),
+        amount=Decimal("100"),
+    )
+    MonthlyCharge.objects.create(
+        property=property_obj,
+        year=2025,
+        month=2,
+        resource_type=Meter.ELECTRICITY,
+        consumption=Decimal("20"),
+        amount=Decimal("200"),
+    )
+
+    meters = api_client.get("/api/meters/", {"property": property_obj.id})
+    readings = api_client.get("/api/readings/", {"meter__property": property_obj.id, "meter": meter.id})
+    charges = api_client.get("/api/monthly-charges/", {"year": 2024, "month": 1})
+
+    assert meters.status_code == 200
+    assert {item["id"] for item in meters.data} == {meter.id, other_meter.id}
+    assert readings.status_code == 200
+    assert [item["id"] for item in readings.data] == [own_reading.id]
+    assert charges.status_code == 200
+    assert len(charges.data) == 1
+    assert charges.data[0]["year"] == 2024
+    assert charges.data[0]["month"] == 1
+
+
+@pytest.mark.django_db
+def test_analytics_rejects_invalid_params(api_client):
+    responses = [
+        api_client.get("/api/analytics/", {"start_month": "0"}),
+        api_client.get("/api/analytics/", {"end_month": "13"}),
+        api_client.get("/api/analytics/", {"properties": "1,bad"}),
+        api_client.get("/api/analytics/", {"properties": "-1"}),
+    ]
+
+    assert all(response.status_code == 400 for response in responses)
+
+
+@pytest.mark.django_db
+def test_analytics_forecast_validation(api_client, property_obj):
+    missing = api_client.get("/api/analytics/forecast/")
+    unknown = api_client.get("/api/analytics/forecast/", {"property": property_obj.id + 999})
+    ok = api_client.get("/api/analytics/forecast/", {"property": property_obj.id})
+
+    assert missing.status_code == 400
+    assert unknown.status_code == 404
+    assert ok.status_code == 200
+    assert ok.data == {"forecast_amount": 0.0}
