@@ -60,7 +60,7 @@ services:
       - tests-sync:/tests-sync
     command: >
       sh -c "rm -f /tests-sync/backend_done /tests-sync/frontend_done &&
-      pytest &&
+      uv run pytest &&
       touch /tests-sync/backend_done &&
       while [ ! -f /tests-sync/frontend_done ]; do
         sleep 1;

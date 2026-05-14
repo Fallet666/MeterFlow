@@ -17,13 +17,12 @@
 
 ## Быстрый запуск без Docker
 1. **Backend**
+   Требуется установленный [`uv`](https://docs.astral.sh/uv/).
    ```bash
    cd backend
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   python manage.py migrate
-   python manage.py runserver 0.0.0.0:8000
+   uv sync
+   uv run python manage.py migrate
+   uv run python manage.py runserver 0.0.0.0:8000
    ```
    По умолчанию используется SQLite. Для PostgreSQL задайте переменные окружения:
    ```bash
@@ -79,7 +78,7 @@ docker-compose up --build
 - `GET /api/analytics/forecast/` — прогноз суммы за текущий месяц.
 
 ## Бизнес-логика
-- При создании показания рассчитывается дельта по предыдущему чтению, подбирается актуальный тариф и обновляется соответствующая запись `MonthlyCharge`.
+- При изменении показаний пересчитываются начисления `MonthlyCharge` по объекту и ресурсу: система берёт положительные дельты между последовательными показаниями и применяет актуальный тариф.
 - Прогноз вычисляется как среднее начислений за последние несколько полных месяцев.
 
 ## UI-страницы
@@ -89,10 +88,10 @@ docker-compose up --build
 - Аналитика с графиками начислений и потребления (Recharts).
 
 ## Тестирование
-- **Backend (pytest + pytest-django + Hypothesis):** покрыты модели, сериализаторы, ключевые API, аналитика и property-based fuzzing бизнес-инвариантов. Перед запуском убедитесь, что зависимости установлены и применены миграции. Команда: `cd backend && python -m pytest`.
+- **Backend (pytest + pytest-django + Hypothesis):** покрыты модели, сериализаторы, ключевые API, аналитика и property-based fuzzing бизнес-инвариантов. Перед запуском убедитесь, что зависимости установлены через `uv sync` и применены миграции. Команда: `cd backend && uv run pytest`.
 - **Frontend (Vitest + Testing Library + fast-check):** компонентные тесты страниц авторизации, дашборда, показаний, аналитики и fuzz/resilience-тесты localStorage/API payloads. Команда: `cd frontend && npm test`.
-- **Точечный fuzzing:** backend `cd backend && python -m pytest core/tests/test_fuzzing.py`, frontend `cd frontend && npm run test:fuzz`.
-- **Покрытие:** backend `cd backend && python -m pytest --cov --cov-report=term-missing`, frontend `cd frontend && npm run test:coverage`.
+- **Точечный fuzzing:** backend `cd backend && uv run pytest core/tests/test_fuzzing.py`, frontend `cd frontend && npm run test:fuzz`.
+- **Покрытие:** backend `cd backend && uv run pytest --cov --cov-report=term-missing`, frontend `cd frontend && npm run test:coverage`.
 - Подробности по покрытию и настройке глубины генерации: [`docs/fuzzing.md`](docs/fuzzing.md).
 - Для PostgreSQL задайте переменные окружения `DB_ENGINE=postgres` и параметры подключения перед запуском тестов, либо оставьте SQLite по умолчанию.
 - Фронтенду нужен `npm install` и актуальное значение `VITE_API_URL`, если API работает не на `http://localhost:8000/api/`.
@@ -100,26 +99,24 @@ docker-compose up --build
 ## Типовой сценарий для нового разработчика
 1. Установите зависимости:
    ```bash
-   cd backend && python -m venv .venv && source .venv/bin/activate
-   pip install -r requirements.txt
+   cd backend && uv sync
    cd ../frontend && npm install
    ```
 2. Подготовьте базу и переменные окружения (при необходимости PostgreSQL с `DB_ENGINE=postgres`). Выполните миграции:
    ```bash
    cd backend
-   source .venv/bin/activate
-   python manage.py migrate
+   uv run python manage.py migrate
    ```
 3. Запустите сервисы локально:
    ```bash
    # Backend
-   cd backend && source .venv/bin/activate && python manage.py runserver 0.0.0.0:8000
+   cd backend && uv run python manage.py runserver 0.0.0.0:8000
    # Frontend (в другом терминале)
    cd frontend && npm run dev -- --host --port 5173
    ```
 4. Прогоните тесты:
    ```bash
-   cd backend && pytest
+   cd backend && uv run pytest
    cd ../frontend && npm test
    ```
 5. Для проверки всего стека через контейнеры используйте `docker-compose up --build` — это поднимет API, базу и SPA.

@@ -4,27 +4,27 @@ MeterFlow uses property-based fuzzing to exercise business invariants with gener
 
 ## Backend
 
-Tooling: `hypothesis`, `pytest`, `pytest-django`.
+Tooling: `uv`, `hypothesis`, `pytest`, `pytest-django`.
 
 Run all backend tests:
 
 ```bash
 cd backend
-python -m pytest
+uv run pytest
 ```
 
 Run only backend fuzz tests:
 
 ```bash
 cd backend
-python -m pytest core/tests/test_fuzzing.py
+uv run pytest core/tests/test_fuzzing.py
 ```
 
 Measure backend coverage:
 
 ```bash
 cd backend
-python -m pytest --cov --cov-report=term-missing
+uv run pytest --cov --cov-report=term-missing
 ```
 
 Covered invariants:
