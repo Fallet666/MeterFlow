@@ -6,8 +6,8 @@ export function Footer() {
         <p className="footer-text">Цифровой помощник для учета коммунальных показаний и аналитики.</p>
       </div>
       <div className="footer-links">
-        <a href="https://hub.mos.ru/korotkov_aleksey/meterflow" target="_blank" rel="noreferrer">
-          Moshub
+        <a href="https://github.com/Fallet666/MeterFlow" target="_blank" rel="noreferrer">
+          GitHub
         </a>
         <a href="https://t.me/born_in_void" target="_blank" rel="noreferrer">
           Telegram @born_in_void
