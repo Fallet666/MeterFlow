@@ -8,6 +8,12 @@
 - **Frontend:** React + Vite, маршрутизация на React Router 7, графики на Recharts.
 - **Инфраструктура:** Docker Compose поднимает API, PostgreSQL и SPA.
 
+## Качество
+- Backend coverage: **96%** по строкам, включая API, сервисы, сериализаторы и property-based fuzzing биллинга.
+- Frontend coverage: **93.81%** по строкам, включая страницы, API-клиент, safe parsing, ErrorBoundary и malformed payload resilience.
+- Зависимости backend зафиксированы через `uv.lock`; Docker runtime/test targets разделены.
+- Подробная проверочная карта: [`docs/quality.md`](docs/quality.md).
+
 ## Функциональность
 - Регистрация и вход через JWT.
 - Управление объектами недвижимости и счётчиками.
@@ -93,6 +99,7 @@ docker-compose up --build
 - **Точечный fuzzing:** backend `cd backend && uv run pytest core/tests/test_fuzzing.py`, frontend `cd frontend && npm run test:fuzz`.
 - **Покрытие:** backend `cd backend && uv run pytest --cov --cov-report=term-missing`, frontend `cd frontend && npm run test:coverage`.
 - Подробности по покрытию и настройке глубины генерации: [`docs/fuzzing.md`](docs/fuzzing.md).
+- Quality checklist и команды для ревью: [`docs/quality.md`](docs/quality.md).
 - Для PostgreSQL задайте переменные окружения `DB_ENGINE=postgres` и параметры подключения перед запуском тестов, либо оставьте SQLite по умолчанию.
 - Фронтенду нужен `npm install` и актуальное значение `VITE_API_URL`, если API работает не на `http://localhost:8000/api/`.
 
