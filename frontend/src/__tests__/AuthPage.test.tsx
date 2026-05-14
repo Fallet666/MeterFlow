@@ -37,4 +37,24 @@ describe("AuthPage", () => {
     expect(await screen.findByText(/Неверные данные/)).toBeInTheDocument();
     expect(onAuthenticated).not.toHaveBeenCalled();
   });
+
+  it("authenticates via register flow", async () => {
+    const onLogin = vi.fn();
+    const onRegister = vi.fn().mockResolvedValue({ user: { username: "bob" }, access: "token" });
+    const onAuthenticated = vi.fn();
+
+    render(
+      <AuthPage onAuthenticated={onAuthenticated} onRegister={onRegister} onLogin={onLogin} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /Зарегистрируйтесь/i }));
+    await userEvent.type(screen.getByLabelText(/Логин/i), "bob");
+    await userEvent.type(screen.getByLabelText(/Email/i), "bob@example.com");
+    await userEvent.type(screen.getByLabelText(/Пароль/i), "secret");
+    await userEvent.click(screen.getByRole("button", { name: /Создать аккаунт/i }));
+
+    expect(onRegister).toHaveBeenCalledWith("bob", "secret", "bob@example.com");
+    expect(onLogin).not.toHaveBeenCalled();
+    expect(onAuthenticated).toHaveBeenCalledWith({ user: { username: "bob" }, access: "token" });
+  });
 });

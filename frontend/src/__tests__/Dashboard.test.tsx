@@ -59,4 +59,25 @@ describe("Dashboard", () => {
     expect(screen.getByText(/Последние показания/)).toBeInTheDocument();
     expect(screen.getByText(/SN-1/)).toBeInTheDocument();
   });
+
+  it("selects first property and loads favorite charts", async () => {
+    window.localStorage.setItem(
+      "mf_favorite_charts",
+      JSON.stringify([{ id: "fav-1", name: "Любимое", properties: [1], resourceType: "electricity", rangePreset: "half" }]),
+    );
+    getMock.mockResolvedValue({ data: { monthly: [{ month: "2024-01", total_amount: 10 }], summary: { total_amount: 10 } } });
+    const onSelectProperty = vi.fn();
+
+    render(
+      <Dashboard
+        selectedProperty={null}
+        properties={[{ id: 1, name: "Дом", address: "Адрес" }]}
+        onSelectProperty={onSelectProperty}
+      />,
+    );
+
+    await waitFor(() => expect(onSelectProperty).toHaveBeenCalledWith(1));
+    expect(await screen.findByText(/Любимое/)).toBeInTheDocument();
+    await waitFor(() => expect(getMock).toHaveBeenCalledWith("analytics/", expect.anything()));
+  });
 });
