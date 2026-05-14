@@ -1,5 +1,11 @@
 # MeterFlow
 
+[![CI](https://github.com/Fallet666/MeterFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/Fallet666/MeterFlow/actions/workflows/ci.yml)
+![Backend coverage](https://img.shields.io/badge/backend_coverage-96%25-brightgreen)
+![Frontend coverage](https://img.shields.io/badge/frontend_coverage-93.81%25-brightgreen)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![Node](https://img.shields.io/badge/node-20-blue)
+
 Простое клиент-серверное приложение для учёта показаний коммунальных счётчиков с аналитикой и прогнозом начислений.
 
 ## Архитектура
@@ -13,6 +19,8 @@
 - Frontend coverage: **93.81%** по строкам, включая страницы, API-клиент, safe parsing, ErrorBoundary и malformed payload resilience.
 - Зависимости backend зафиксированы через `uv.lock`; Docker runtime/test targets разделены.
 - Подробная проверочная карта: [`docs/quality.md`](docs/quality.md).
+- Архитектурный обзор: [`docs/architecture.md`](docs/architecture.md).
+- Reviewer checklist: [`REVIEW.md`](REVIEW.md).
 
 ## Функциональность
 - Регистрация и вход через JWT.
