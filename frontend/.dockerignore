@@ -1,5 +1,9 @@
 node_modules
 dist
+coverage
+.vite
+.DS_Store
+src/__tests__
 npm-debug.log
 yarn-error.log
 .git
