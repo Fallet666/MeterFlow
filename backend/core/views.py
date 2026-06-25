@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import Meter, MonthlyCharge, Payment, Property, Reading, Tariff
+from .permissions import IsAdminOrEmployee
 from .serializers import (
     LoginSerializer,
     MeterSerializer,
@@ -101,6 +102,11 @@ class MeterViewSet(viewsets.ModelViewSet):
 class TariffViewSet(viewsets.ModelViewSet):
     queryset = Tariff.objects.all()
     serializer_class = TariffSerializer
+
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [IsAdminOrEmployee()]
+        return [permissions.IsAuthenticated()]
 
 
 class ReadingViewSet(viewsets.ModelViewSet):

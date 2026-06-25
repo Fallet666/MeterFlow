@@ -162,6 +162,12 @@ def test_fuzz_domain_validation_rejects_invalid_financial_payloads(
     client = APIClient()
     client.force_authenticate(user=user)
 
+    admin_user = User.objects.create_user(username="admin_fuzz", password="password123")
+    admin_user.profile.role = "admin"
+    admin_user.profile.save()
+    admin_client = APIClient()
+    admin_client.force_authenticate(user=admin_user)
+
     bad_payment_month = client.post(
         "/api/payments/",
         {
@@ -189,7 +195,7 @@ def test_fuzz_domain_validation_rejects_invalid_financial_payloads(
         {"meter": meter.id, "value": str(negative_reading), "reading_date": "2024-01-01"},
         format="json",
     )
-    bad_tariff = client.post(
+    bad_tariff = admin_client.post(
         "/api/tariffs/",
         {
             "resource_type": Meter.ELECTRICITY,

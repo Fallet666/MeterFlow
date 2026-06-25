@@ -114,8 +114,8 @@ def test_payment_validation(api_client, property_obj):
 
 
 @pytest.mark.django_db
-def test_tariff_crud(api_client):
-    response = api_client.post(
+def test_tariff_crud_admin(admin_api_client):
+    response = admin_api_client.post(
         "/api/tariffs/",
         {
             "resource_type": Meter.COLD_WATER,
@@ -125,8 +125,58 @@ def test_tariff_crud(api_client):
         format="json",
     )
     assert response.status_code == 201
-    list_resp = api_client.get("/api/tariffs/")
+    list_resp = admin_api_client.get("/api/tariffs/")
     assert any(item["resource_type"] == Meter.COLD_WATER for item in list_resp.data)
+
+
+@pytest.mark.django_db
+def test_tariff_write_forbidden_for_regular_user(api_client):
+    create_resp = api_client.post(
+        "/api/tariffs/",
+        {
+            "resource_type": Meter.ELECTRICITY,
+            "value_per_unit": "6.00",
+            "valid_from": "2024-01-01",
+        },
+        format="json",
+    )
+    assert create_resp.status_code == 403
+
+    resp = api_client.put(
+        "/api/tariffs/999/",
+        {"resource_type": Meter.ELECTRICITY, "value_per_unit": "7.00", "valid_from": "2024-01-01"},
+        format="json",
+    )
+    assert resp.status_code in (403, 404)
+
+    resp = api_client.delete("/api/tariffs/999/")
+    assert resp.status_code in (403, 404)
+
+
+@pytest.mark.django_db
+def test_tariff_read_allowed_for_regular_user(api_client, tariff):
+    response = api_client.get("/api/tariffs/")
+    assert response.status_code == 200
+    assert any(item["id"] == tariff.id for item in response.data)
+
+    response = api_client.get(f"/api/tariffs/{tariff.id}/")
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_tariff_write_allowed_for_employee(employee_user):
+    client = APIClient()
+    client.force_authenticate(user=employee_user)
+    response = client.post(
+        "/api/tariffs/",
+        {
+            "resource_type": Meter.GAS,
+            "value_per_unit": "8.00",
+            "valid_from": "2024-06-01",
+        },
+        format="json",
+    )
+    assert response.status_code == 201
 
 
 @pytest.mark.django_db

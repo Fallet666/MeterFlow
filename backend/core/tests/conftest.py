@@ -14,9 +14,32 @@ def user(db):
 
 
 @pytest.fixture
+def admin_user(db):
+    user = User.objects.create_user(username="admin", password="password123", is_staff=True)
+    user.profile.role = "admin"
+    user.profile.save()
+    return user
+
+
+@pytest.fixture
+def employee_user(db):
+    user = User.objects.create_user(username="employee", password="password123")
+    user.profile.role = "employee"
+    user.profile.save()
+    return user
+
+
+@pytest.fixture
 def api_client(user):
     client = APIClient()
     client.force_authenticate(user=user)
+    return client
+
+
+@pytest.fixture
+def admin_api_client(admin_user):
+    client = APIClient()
+    client.force_authenticate(user=admin_user)
     return client
 
 

@@ -1,5 +1,8 @@
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Property(models.Model):
@@ -95,3 +98,27 @@ class Payment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.property} платеж за {self.month}.{self.year}"
+
+
+class Profile(models.Model):
+    ROLE_ADMIN = "admin"
+    ROLE_EMPLOYEE = "employee"
+    ROLE_USER = "user"
+
+    ROLE_CHOICES = [
+        (ROLE_ADMIN, "Администратор"),
+        (ROLE_EMPLOYEE, "Сотрудник УК"),
+        (ROLE_USER, "Пользователь"),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_USER)
+
+    def __str__(self) -> str:
+        return f"{self.user.username} ({self.get_role_display()})"
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)

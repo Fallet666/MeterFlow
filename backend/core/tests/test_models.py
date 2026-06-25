@@ -2,8 +2,9 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
+from django.contrib.auth.models import User
 
-from core.models import Meter, MonthlyCharge, Reading
+from core.models import Meter, MonthlyCharge, Profile, Reading
 from core.services import find_tariff, process_reading
 
 
@@ -46,3 +47,17 @@ def test_process_reading_creates_monthly_charge(meter, tariff):
     charge = MonthlyCharge.objects.get(property=meter.property)
     assert charge.consumption == Decimal("8.000")
     assert charge.amount == Decimal("44.00")
+
+
+@pytest.mark.django_db
+def test_profile_auto_created_on_user_creation():
+    user = User.objects.create_user(username="profi", password="pass123")
+    assert hasattr(user, "profile")
+    assert user.profile.role == Profile.ROLE_USER
+
+
+@pytest.mark.django_db
+def test_profile_role_can_be_promoted(user):
+    user.profile.role = Profile.ROLE_ADMIN
+    user.profile.save()
+    assert user.profile.role == Profile.ROLE_ADMIN
